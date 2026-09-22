@@ -11,6 +11,8 @@ public class EndlessLevelHandler : MonoBehaviour
 
     GameObject[] sections = new GameObject[10];
 
+    GameObject firstSection;
+
     Transform truckTransform;
 
     WaitForSeconds waitFor100Ms = new WaitForSeconds(0.1f);
@@ -21,6 +23,7 @@ public class EndlessLevelHandler : MonoBehaviour
     void Start()
     {
         truckTransform = GameObject.FindGameObjectWithTag("Player").transform;
+        firstSection = GameObject.FindGameObjectWithTag("FirstSection");
 
         int prefabsIndex = 0;
 
@@ -38,7 +41,7 @@ public class EndlessLevelHandler : MonoBehaviour
         {
             GameObject randomSection = GetRandomSectionFromPool();
 
-            randomSection.transform.position = new Vector3(sectionPool[i].transform.position.x, 0, i * sectionLength);
+            randomSection.transform.position = new Vector3(sectionPool[i].transform.position.x, 0, 500 + i * sectionLength);
             randomSection.SetActive(true);
 
             sections[i] = randomSection;
@@ -51,6 +54,7 @@ public class EndlessLevelHandler : MonoBehaviour
     {
         while (true)
         {
+            //DisableFirstSection();
             UpdateSectionPositions();
             yield return waitFor100Ms;
         }
@@ -58,6 +62,7 @@ public class EndlessLevelHandler : MonoBehaviour
 
     void UpdateSectionPositions()
     {
+        DisableFirstSection();
         for (int i = 0; i < sections.Length; i++)
         {
             if(sections[i].transform.position.z - truckTransform.position.z < -sectionLength)
@@ -70,6 +75,17 @@ public class EndlessLevelHandler : MonoBehaviour
                 sections[i].transform.position = new Vector3(lastSectionPosition.x, 0, lastSectionPosition.z + sectionLength * sections.Length);
                 sections[i].SetActive(true);
             }
+        }
+    }
+
+    void DisableFirstSection()
+    {
+        if (firstSection == null)
+            return;
+
+        if(firstSection.transform.position.z - truckTransform.position.z < -sectionLength)
+        {
+            firstSection.SetActive(false);
         }
     }
 

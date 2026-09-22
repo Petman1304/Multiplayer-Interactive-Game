@@ -32,7 +32,7 @@ public class TruckHandler : MonoBehaviour
     private void FixedUpdate()
     {
         accelerate();
-        Debug.Log($"Velocity : {rb.linearVelocity.z}");
+        //Debug.Log($"Velocity : {rb.linearVelocity.z}");
 
         steer();
     }
