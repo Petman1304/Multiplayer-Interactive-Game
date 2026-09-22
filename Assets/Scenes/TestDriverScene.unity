@@ -690,6 +690,7 @@ GameObject:
   - component: {fileID: 1691801319}
   - component: {fileID: 1691801320}
   - component: {fileID: 1691801321}
+  - component: {fileID: 1691801322}
   m_Layer: 0
   m_Name: Truck
   m_TagString: Untagged
@@ -738,7 +739,7 @@ Rigidbody:
   m_UseGravity: 1
   m_IsKinematic: 0
   m_Interpolate: 1
-  m_Constraints: 116
+  m_Constraints: 112
   m_CollisionDetection: 0
 --- !u!114 &1691801321
 MonoBehaviour:
@@ -753,7 +754,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TruckHandler
   rb: {fileID: 1691801320}
-  truckAcceleration: 100
+  truckAcceleration: 50
+  steerInputMultiplier: 200
+--- !u!114 &1691801322
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1691801318}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7644a2294cda8e84e81284134516fce1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::InputHandler
+  truckHandler: {fileID: 1691801321}
 --- !u!1001 &1795908767
 PrefabInstance:
   m_ObjectHideFlags: 0
