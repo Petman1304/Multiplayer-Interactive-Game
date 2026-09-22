@@ -19,6 +19,9 @@ public class TruckHandler : MonoBehaviour
     [SerializeField]
     float maxSteerVelocity = 10;
 
+    [SerializeField]
+    float maxForwardVelocity = 100;
+
     Vector2 input = Vector2.zero;
 
     private void Update()
@@ -29,6 +32,7 @@ public class TruckHandler : MonoBehaviour
     private void FixedUpdate()
     {
         accelerate();
+        Debug.Log($"Velocity : {rb.linearVelocity.z}");
 
         steer();
     }
@@ -37,6 +41,10 @@ public class TruckHandler : MonoBehaviour
     {
         rb.linearDamping = 0;
         rb.AddForce(rb.transform.forward * truckAcceleration);
+
+        float truckVelocity = Mathf.Clamp(rb.linearVelocity.z, 0f, maxForwardVelocity);
+
+        rb.linearVelocity = new Vector3(rb.linearVelocity.x, 0, truckVelocity);
     }
 
     void steer()

@@ -563,6 +563,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EndlessLevelHandler
   sectionPrefabs:
   - {fileID: 2863588064189201699, guid: 05bc64b0aa473cd48b20003f7e5577df, type: 3}
+  - {fileID: 6691947237283577327, guid: 3dedbb17a9c0e2d4cbb0ee7b8e40d9e9, type: 3}
+  - {fileID: 1959546462859846672, guid: c0d9cd23fd0384d4daa2c1fe7612264d, type: 3}
 --- !u!1 &1691801318
 GameObject:
   m_ObjectHideFlags: 0
@@ -642,6 +644,7 @@ MonoBehaviour:
   truckAcceleration: 50
   steerInputMultiplier: 200
   maxSteerVelocity: 30
+  maxForwardVelocity: 100
 --- !u!114 &1691801322
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -673,7 +676,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3639302493839176793, guid: 188e8beb51f14bf4da57e99a824d4851, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -0.5
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3639302493839176793, guid: 188e8beb51f14bf4da57e99a824d4851, type: 3}
       propertyPath: m_LocalRotation.w
