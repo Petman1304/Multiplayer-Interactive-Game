@@ -722,7 +722,7 @@ MonoBehaviour:
   truckAcceleration: 100
   steerInputMultiplier: 200
   maxSteerVelocity: 30
-  maxForwardVelocity: 200
+  maxForwardVelocity: 500
 --- !u!114 &1691801322
 MonoBehaviour:
   m_ObjectHideFlags: 0
