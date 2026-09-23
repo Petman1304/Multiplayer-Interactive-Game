@@ -13,6 +13,8 @@ public class InputHandler : MonoBehaviour
     InputAction moveAction;
     InputAction resetAction;
 
+    private PlayerInput playerInput;
+
 
     //private void Awake()
     //{
@@ -24,8 +26,11 @@ public class InputHandler : MonoBehaviour
     //}
     private void Start()
     {
-        moveAction = InputSystem.actions.FindAction("Move");
-        resetAction = InputSystem.actions.FindAction("Reset");
+        playerInput = GetComponent<PlayerInput>();
+
+        moveAction = playerInput.actions["Move"];
+        
+        //resetAction = InputSystem.actions.FindAction("Reset");
     }
 
     // Update is called once per frame

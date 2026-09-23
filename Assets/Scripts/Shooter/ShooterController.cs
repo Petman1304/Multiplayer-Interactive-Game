@@ -12,6 +12,9 @@ public class ShooterController : MonoBehaviour
     [SerializeField]
     private float gravityValue = -9.81f;
 
+    [SerializeField]
+    Rigidbody rigidbody;
+
     public CharacterController controller;
     private PlayerInput playerInput;
     private Vector3 playerVelocity;
@@ -19,6 +22,11 @@ public class ShooterController : MonoBehaviour
 
     private InputAction moveAction;
     private InputAction jumpAction;
+
+    [SerializeField]
+    Transform truckTransform;
+
+    private Vector3 lastTruckPosition;
 
 
     private void Start()
@@ -28,6 +36,9 @@ public class ShooterController : MonoBehaviour
 
         moveAction = playerInput.actions["Move"];
         jumpAction = playerInput.actions["Jump"];
+
+        lastTruckPosition = truckTransform.position;
+
     }
 
     void Update()
@@ -41,10 +52,17 @@ public class ShooterController : MonoBehaviour
                 playerVelocity.y = -2f;
         }
 
+        //Vector3 truckMovement = truckTransform.position - lastTruckPosition;
+        Vector3 truckMovement = new Vector3((truckTransform.position.x - lastTruckPosition.x)*0.9f, 0, truckTransform.position.z - lastTruckPosition.z);
+        controller.Move(truckMovement);
+        lastTruckPosition = truckTransform.position;
+
+
         // Read input
         Vector2 input = moveAction.ReadValue<Vector2>();
         Vector3 move = new Vector3(input.x, 0, input.y);
         move = Vector3.ClampMagnitude(move, 1f);
+        
 
         if (move != Vector3.zero)
             transform.forward = move;

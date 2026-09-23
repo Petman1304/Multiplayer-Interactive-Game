@@ -59,7 +59,7 @@
             ],
             "bindings": [
                 {
-                    "name": "ArrowKeys",
+                    "name": "WASD",
                     "id": "d572e57d-f70a-4907-ba87-99605f0fb41e",
                     "path": "2DVector",
                     "interactions": "",
