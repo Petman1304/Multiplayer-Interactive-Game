@@ -28,14 +28,17 @@ public class ShooterController : MonoBehaviour
 
     private Vector3 lastTruckPosition;
 
-
-    private void Start()
+    private void Awake()
     {
         controller = GetComponent<CharacterController>();
         playerInput = GetComponent<PlayerInput>();
 
         moveAction = playerInput.actions["Move"];
         jumpAction = playerInput.actions["Jump"];
+    }
+    private void Start()
+    {
+        
 
         lastTruckPosition = truckTransform.position;
 
@@ -52,14 +55,14 @@ public class ShooterController : MonoBehaviour
                 playerVelocity.y = -2f;
         }
 
-        //Vector3 truckMovement = truckTransform.position - lastTruckPosition;
-        Vector3 truckMovement = new Vector3((truckTransform.position.x - lastTruckPosition.x)*0.9f, 0, truckTransform.position.z - lastTruckPosition.z);
+        Vector3 truckMovement = new Vector3((truckTransform.position.x - lastTruckPosition.x) * 0.6f, 0, truckTransform.position.z - lastTruckPosition.z);
         controller.Move(truckMovement);
         lastTruckPosition = truckTransform.position;
 
 
         // Read input
         Vector2 input = moveAction.ReadValue<Vector2>();
+        Debug.Log($"Input : {input}");
         Vector3 move = new Vector3(input.x, 0, input.y);
         move = Vector3.ClampMagnitude(move, 1f);
         

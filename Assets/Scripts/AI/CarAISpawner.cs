@@ -53,7 +53,7 @@ public class CarAISpawner : MonoBehaviour
 
     void SpawnNewCar()
     {
-        if (Time.time - timeLastCarSpawned < 1)
+        if (Time.time - timeLastCarSpawned < 2)
             return;
 
         GameObject carToSpawn = null;

@@ -6,6 +6,7 @@ TagManager:
   tags:
   - FirstSection
   - CarAI
+  - Road
   layers:
   - Default
   - TransparentFX
@@ -14,8 +15,8 @@ TagManager:
   - Water
   - UI
   - CarAI
-  - 
-  - 
+  - Player1 Camera
+  - Player2 Camera
   - 
   - 
   - 

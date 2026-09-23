@@ -11,7 +11,8 @@ public class InputHandler : MonoBehaviour
     TruckHandler truckHandler;
 
     InputAction moveAction;
-    InputAction resetAction;
+
+    //InputAction resetAction;
 
     private PlayerInput playerInput;
 
@@ -42,8 +43,8 @@ public class InputHandler : MonoBehaviour
 
         truckHandler.SetInput(input);
 
-        if(resetAction.IsPressed())
-            SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        //if(resetAction.IsPressed())
+        //    SceneManager.LoadScene(SceneManager.GetActiveScene().name);
 
         //if (Input.GetKeyDown(KeyCode.R))
         //    SceneManager.LoadScene(SceneManager.GetActiveScene().name);
