@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System;
 
 public class TruckHandler : MonoBehaviour
 {
@@ -25,6 +26,8 @@ public class TruckHandler : MonoBehaviour
     Vector2 input = Vector2.zero;
 
     bool isCrashed = false;
+
+    public event Action<TruckHandler> OnPlayerCrashed;
 
     //Stats
     float startPositionZ;
@@ -108,5 +111,7 @@ public class TruckHandler : MonoBehaviour
         Debug.Log($"Hit: {collision.collider.name}");
 
         isCrashed = true;
+
+        OnPlayerCrashed?.Invoke(this);
     }
 }
