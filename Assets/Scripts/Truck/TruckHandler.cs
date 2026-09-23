@@ -24,6 +24,8 @@ public class TruckHandler : MonoBehaviour
 
     Vector2 input = Vector2.zero;
 
+    bool isCrashed = false;
+
     private void Update()
     {
         truckModel.transform.rotation = Quaternion.Euler(0, rb.linearVelocity.x * 0.25f, 0);
@@ -31,10 +33,19 @@ public class TruckHandler : MonoBehaviour
 
     private void FixedUpdate()
     {
-        accelerate();
-        //Debug.Log($"Velocity : {rb.linearVelocity.z}");
+        if (!isCrashed)
+        {
+            accelerate();
+            //Debug.Log($"Velocity : {rb.linearVelocity.z}");
 
-        steer();
+            steer();
+        }
+        else
+        {
+            rb.linearVelocity = new Vector3(0, 0, 0);
+        }
+        //TODO : game over if crashed
+        
     }
 
     void accelerate()
@@ -69,5 +80,12 @@ public class TruckHandler : MonoBehaviour
     {
         inputVector.Normalize();
         input = inputVector;
+    }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        Debug.Log($"Hit: {collision.collider.name}");
+
+        isCrashed = true;
     }
 }
