@@ -719,7 +719,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TruckHandler
   rb: {fileID: 1691801320}
   truckModel: {fileID: 640348239}
-  truckAcceleration: 100
+  truckAcceleration: 50
   steerInputMultiplier: 200
   maxSteerVelocity: 30
   maxForwardVelocity: 500

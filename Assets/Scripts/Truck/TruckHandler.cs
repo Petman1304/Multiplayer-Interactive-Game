@@ -28,6 +28,10 @@ public class TruckHandler : MonoBehaviour
 
     private void Update()
     {
+
+        if (isCrashed)
+            return;
+
         truckModel.transform.rotation = Quaternion.Euler(0, rb.linearVelocity.x * 0.25f, 0);
     }
 
@@ -80,6 +84,11 @@ public class TruckHandler : MonoBehaviour
     {
         inputVector.Normalize();
         input = inputVector;
+    }
+
+    public void SetMaxVelocity(float newMaxVelocity)
+    {
+        maxForwardVelocity = newMaxVelocity;
     }
 
     private void OnCollisionEnter(Collision collision)
