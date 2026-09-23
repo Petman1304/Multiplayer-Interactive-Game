@@ -26,6 +26,16 @@ public class TruckHandler : MonoBehaviour
 
     bool isCrashed = false;
 
+    //Stats
+    float startPositionZ;
+    float distanceTravelledZ = 0;
+    public float DistanceTravelledZ => distanceTravelledZ;
+
+    private void Start()
+    {
+        startPositionZ = transform.position.z;
+    }
+
     private void Update()
     {
 
@@ -33,6 +43,8 @@ public class TruckHandler : MonoBehaviour
             return;
 
         truckModel.transform.rotation = Quaternion.Euler(0, rb.linearVelocity.x * 0.25f, 0);
+
+        distanceTravelledZ = (transform.position.z - startPositionZ)/100;
     }
 
     private void FixedUpdate()

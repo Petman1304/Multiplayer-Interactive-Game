@@ -14,14 +14,14 @@ public class InputHandler : MonoBehaviour
     InputAction resetAction;
 
 
-    private void Awake()
-    {
-        if (!CompareTag("Player"))
-        {
-            Destroy(this);
-            return;
-        }
-    }
+    //private void Awake()
+    //{
+    //    if (!CompareTag("Player"))
+    //    {
+    //        Destroy(this);
+    //        return;
+    //    }
+    //}
     private void Start()
     {
         moveAction = InputSystem.actions.FindAction("Move");
