@@ -490,7 +490,7 @@ MonoBehaviour:
   gravityValue: -9.81
   rigidbody: {fileID: 0}
   controller: {fileID: 735636254}
-  truckTransform: {fileID: 0}
+  truckTransform: {fileID: 735636253}
 --- !u!114 &735636256
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -50,7 +50,7 @@ public class CarAIHandler : MonoBehaviour
 
         carHandler.SetInput(new Vector2(steerInput, accelerationInput));
 
-        Debug.Log("AI Updated");
+        //Debug.Log("AI Updated");
     }
 
     IEnumerator UpdateLessOftenCO()
