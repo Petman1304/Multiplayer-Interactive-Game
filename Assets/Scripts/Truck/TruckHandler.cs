@@ -24,6 +24,9 @@ public class TruckHandler : MonoBehaviour
     float maxForwardVelocity = 100;
 
     [SerializeField]
+    float steerSensitivity = 1.0f;
+
+    [SerializeField]
     private ArduinoDriverInputHandler arduinoInput;
 
     Vector2 input = Vector2.zero;
@@ -99,7 +102,7 @@ public class TruckHandler : MonoBehaviour
         //}
         if (Mathf.Abs(arduinoInput.value) > 0)
         {
-            rb.AddForce(rb.transform.right * steerInputMultiplier * arduinoInput.value);
+            rb.AddForce(rb.transform.right * steerInputMultiplier * arduinoInput.value * steerSensitivity);
 
             float normalizedX = rb.linearVelocity.x / maxSteerVelocity;
 
