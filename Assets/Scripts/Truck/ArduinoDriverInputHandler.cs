@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.IO.Ports;
 using System;
+using System.Globalization;
 
 public class ArduinoDriverInputHandler : MonoBehaviour
 {
@@ -36,10 +37,17 @@ public class ArduinoDriverInputHandler : MonoBehaviour
         try
         {
             string data = serial.ReadLine();
+
+            Debug.Log($"Raw data : {data}");
             
-            if(float.TryParse(data, out float result))
+            if(float.TryParse(data, 
+                System.Globalization.NumberStyles.Float,
+                CultureInfo.InvariantCulture,
+                out float result))
             {
                 value = result;
+                Debug.Log($"Parsed Value: {value}");
+                Debug.Log($"Serial Input : {value}");
             }
 
 

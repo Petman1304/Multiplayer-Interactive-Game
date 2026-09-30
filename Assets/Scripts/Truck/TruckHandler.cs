@@ -102,6 +102,7 @@ public class TruckHandler : MonoBehaviour
         //}
         if (Mathf.Abs(arduinoInput.value) > 0)
         {
+            Debug.Log($"Serial Input : {arduinoInput.value}");
             rb.AddForce(rb.transform.right * steerInputMultiplier * arduinoInput.value * steerSensitivity);
 
             float normalizedX = rb.linearVelocity.x / maxSteerVelocity;

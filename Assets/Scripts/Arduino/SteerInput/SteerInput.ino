@@ -1,5 +1,5 @@
 int potValue;
-float out;
+float out, filteredPotValue;
 
 
 void setup() {
@@ -7,8 +7,13 @@ void setup() {
 }
 
 void loop() {
-  potValue = analogRead(A0);
-  out = (float) potValue / 2048 - 1.0;
+  filteredPotValue = 0;
+  for(int i = 0; i < 10; i++){
+    potValue = analogRead(A0);
+    filteredPotValue += (float) potValue/10;
+    delay(1);
+  }
+  out = filteredPotValue / 2048 - 1.0;
   Serial.println(out);
-  delay(1);
+  delay(100);
 }
