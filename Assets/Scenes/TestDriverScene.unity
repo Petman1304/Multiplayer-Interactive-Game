@@ -1387,6 +1387,7 @@ GameObject:
   - component: {fileID: 1691801321}
   - component: {fileID: 1691801322}
   - component: {fileID: 1691801323}
+  - component: {fileID: 1691801324}
   m_Layer: 0
   m_Name: Truck
   m_TagString: Player
@@ -1455,6 +1456,7 @@ MonoBehaviour:
   steerInputMultiplier: 200
   maxSteerVelocity: 30
   maxForwardVelocity: 500
+  arduinoInput: {fileID: 1691801324}
 --- !u!114 &1691801322
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1468,6 +1470,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::InputHandler
   truckHandler: {fileID: 1691801321}
+  playerInput: {fileID: 0}
 --- !u!114 &1691801323
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1498,6 +1501,19 @@ MonoBehaviour:
   m_DefaultActionMap: Driver
   m_SplitScreenIndex: -1
   m_Camera: {fileID: 0}
+--- !u!114 &1691801324
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1691801318}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5da9da45d6d33774094f6db2e711b231, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ArduinoDriverInputHandler
+  value: 0
 --- !u!1001 &1795908767
 PrefabInstance:
   m_ObjectHideFlags: 0
