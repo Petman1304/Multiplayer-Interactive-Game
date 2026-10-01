@@ -374,7 +374,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SerialGyroInputHandler
   portName: COM4
-  value: {x: 0, y: 0, z: 0}
+  rotSpeed: {x: 0, y: 0, z: 0}
+  resetAngle: 0
 --- !u!114 &288391605
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -388,7 +389,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GunController
   gyroInputHandler: {fileID: 288391604}
-  aimSensitivity: 2
+  aimSensitivity: 1
 --- !u!1 &554929768
 GameObject:
   m_ObjectHideFlags: 0
