@@ -20,7 +20,7 @@ public class GunController : MonoBehaviour
     void Update()
     {
         _gyroInput = gyroInputHandler.value;
-        _currentRot -= new Vector3(_gyroInput.x, _gyroInput.z, _gyroInput.y);
+        _currentRot -= new Vector3(_gyroInput.x, _gyroInput.z, 0);
 
         transform.rotation = Quaternion.Euler(_currentRot * aimSensitivity);
     }

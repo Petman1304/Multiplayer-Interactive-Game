@@ -14,7 +14,7 @@ public class SerialGyroInputHandler : MonoBehaviour
     void Start()
     {
         serial = new SerialPort(portName, 115200);
-        serial.ReadTimeout = 100;
+        serial.ReadTimeout = 10;
 
         try
         {
