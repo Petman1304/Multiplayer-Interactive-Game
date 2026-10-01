@@ -95,12 +95,13 @@ void loop() {
   mpu.getEvent(&a, &g, &temp);
 
   // Serial.print("Rotation X: ");
-  Serial.print(g.gyro.x);
+  Serial.print(g.gyro.x + 0.03);
+  Serial.print(",");
   // Serial.print(", Y: ");
-  // Serial.print(g.gyro.y);
+  Serial.print(g.gyro.y - 0.01);
   // Serial.print(", Z: ");
   Serial.print(",");
-  Serial.println(g.gyro.z);
+  Serial.println(g.gyro.z + 0.02);
   // Serial.println(" rad/s");
 
   // Serial.println("");
