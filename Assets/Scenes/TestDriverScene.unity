@@ -1456,7 +1456,7 @@ MonoBehaviour:
   steerInputMultiplier: 200
   maxSteerVelocity: 30
   maxForwardVelocity: 500
-  steerSensitivity: 0.25
+  steerSensitivity: 0.5
   arduinoInput: {fileID: 1691801324}
 --- !u!114 &1691801322
 MonoBehaviour:
