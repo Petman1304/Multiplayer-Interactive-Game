@@ -8,6 +8,12 @@
 #include <Adafruit_Sensor.h>
 #include <Wire.h>
 
+float deadzone(float data);
+
+float rotX, rotY, rotZ;
+float epsilon = 0.1;
+int resetBtn = 6;
+
 Adafruit_MPU6050 mpu;
 
 void setup(void) {
@@ -86,6 +92,8 @@ void setup(void) {
   }
 
   Serial.println("");
+
+  pinMode(resetBtn, INPUT);
   delay(100);
 }
 
@@ -95,15 +103,24 @@ void loop() {
   mpu.getEvent(&a, &g, &temp);
 
   // Serial.print("Rotation X: ");
-  Serial.print(g.gyro.x + 0.03);
+  Serial.print(deadzone(g.gyro.x));
   Serial.print(",");
   // Serial.print(", Y: ");
-  Serial.print(g.gyro.y - 0.01);
+  Serial.print(deadzone(g.gyro.y));
   // Serial.print(", Z: ");
   Serial.print(",");
-  Serial.println(g.gyro.z + 0.02);
+  Serial.print(deadzone(g.gyro.z));
+  Serial.print(",");
+  Serial.println(digitalRead(resetBtn));
   // Serial.println(" rad/s");
 
   // Serial.println("");
   delay(50);
+}
+
+float deadzone(float data){
+  if(abs(data) < 0.1)
+    return 0.0;
+  else
+    return data;
 }

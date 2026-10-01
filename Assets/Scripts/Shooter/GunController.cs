@@ -19,7 +19,12 @@ public class GunController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        _gyroInput = gyroInputHandler.value;
+        if (gyroInputHandler.resetAngle == 1)
+        {
+            _currentRot = Vector3.zero;
+        }
+
+        _gyroInput = gyroInputHandler.rotSpeed * Time.deltaTime;
         _currentRot -= new Vector3(_gyroInput.x, _gyroInput.z, 0);
 
         transform.rotation = Quaternion.Euler(_currentRot * aimSensitivity);
