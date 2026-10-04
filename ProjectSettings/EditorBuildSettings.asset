@@ -14,8 +14,17 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/Scenes/IsolatedMultiplayer 1.unity
     guid: f717c3c07b5a508479c7220a22aa5193
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/new.unity
     guid: fe777c9c4b900dd40aa2bf36817c7a5a
+  - enabled: 0
+    path: Assets/Scenes/MultiplayerLobby.unity
+    guid: 6a396825757c47b41a34d36c2b798fc3
+  - enabled: 0
+    path: Assets/Scenes/Lobby.unity
+    guid: a8c8a8185a0ac744db1d253bf5a22181
+  - enabled: 1
+    path: Assets/Scenes/LobbyMultiplayer.unity
+    guid: 2a2eb01c1b1333f41a441aa631d1ba9c
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
