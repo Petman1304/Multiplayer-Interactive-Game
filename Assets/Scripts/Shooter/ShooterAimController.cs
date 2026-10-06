@@ -32,7 +32,6 @@ public class ShooterAimController : MonoBehaviour
 
             cinemachineRotation.TargetOffset = startOffset + inputAngel*aimSensitivity;
 
-            
         }
         else
         {

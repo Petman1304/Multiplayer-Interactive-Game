@@ -38,7 +38,7 @@ public class SerialGyroInputHandler : MonoBehaviour
 
         //if (resetAngle == 1)
         //    rotAngle = Vector3.zero;
-        
+
         try
         {
             string data = serial.ReadLine().Trim();
