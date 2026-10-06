@@ -36,8 +36,8 @@ public class SerialGyroInputHandler : MonoBehaviour
         if (serial == null || !serial.IsOpen)
             return;
 
-        if (resetAngle == 1)
-            rotAngle = Vector3.zero;
+        //if (resetAngle == 1)
+        //    rotAngle = Vector3.zero;
         
         try
         {
