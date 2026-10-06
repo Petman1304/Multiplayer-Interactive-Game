@@ -132,8 +132,13 @@ public class TruckHandler : MonoBehaviour
     {
         Debug.Log($"Hit: {collision.collider.name}");
 
-        isCrashed = true;
+        if(!(collision.collider.name == "Player"))
+        {
+            isCrashed = true;
+            OnPlayerCrashed?.Invoke(this);
 
-        OnPlayerCrashed?.Invoke(this);
+
+        }
+
     }
 }

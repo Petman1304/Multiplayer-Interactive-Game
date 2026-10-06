@@ -402,7 +402,7 @@ Transform:
   m_GameObject: {fileID: 554929768}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0.052, y: 0, z: 0}
   m_LocalScale: {x: 0.2, y: 0.2, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -503,6 +503,7 @@ GameObject:
   - component: {fileID: 735636254}
   - component: {fileID: 735636257}
   - component: {fileID: 735636258}
+  - component: {fileID: 735636259}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -599,7 +600,7 @@ Transform:
   m_GameObject: {fileID: 735636249}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1.027, z: 0}
+  m_LocalPosition: {x: 0, y: 2, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -625,7 +626,7 @@ CharacterController:
     m_Bits: 0
   m_LayerOverridePriority: 0
   m_ProvidesContacts: 0
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 3
   m_Height: 2
   m_Radius: 0.5
@@ -646,12 +647,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4728bad3b184f6c4d8f33101f2ccea99, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ShooterController
-  playerSpeed: 5
-  jumpHeight: 1.5
-  gravityValue: -9.81
-  rigidbody: {fileID: 0}
+  playerSpeed: 40
+  rb: {fileID: 735636259}
   serialGyroInputHandler: {fileID: 735636258}
-  controller: {fileID: 735636254}
   truckTransform: {fileID: 735636253}
 --- !u!114 &735636256
 MonoBehaviour:
@@ -718,6 +716,33 @@ MonoBehaviour:
   rotSpeed: {x: 0, y: 0, z: 0}
   rotAngle: {x: 0, y: 0, z: 0}
   resetAngle: 0
+--- !u!54 &735636259
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 735636249}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 0
+  m_Interpolate: 0
+  m_Constraints: 112
+  m_CollisionDetection: 0
 --- !u!1 &981299119
 GameObject:
   m_ObjectHideFlags: 0
@@ -837,7 +862,7 @@ Transform:
   m_GameObject: {fileID: 981299119}
   serializedVersion: 2
   m_LocalRotation: {x: 0.19115996, y: 8.942009e-10, z: 0.0000000045882675, w: 0.9815589}
-  m_LocalPosition: {x: 0, y: 2.027, z: -2.47}
+  m_LocalPosition: {x: 0, y: 3, z: -2.47}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1144,7 +1169,7 @@ Transform:
   m_GameObject: {fileID: 1687882656}
   serializedVersion: 2
   m_LocalRotation: {x: 0.19115995, y: 0.0000000018582522, z: -3.618972e-10, w: 0.9815589}
-  m_LocalPosition: {x: 0, y: 2.027, z: -2.47}
+  m_LocalPosition: {x: 0, y: 3, z: -2.47}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

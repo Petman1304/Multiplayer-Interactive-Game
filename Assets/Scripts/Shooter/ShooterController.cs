@@ -7,84 +7,38 @@ public class ShooterController : MonoBehaviour
     private float playerSpeed = 5.0f;
     
     [SerializeField]
-    private float jumpHeight = 1.5f;
-
-    [SerializeField]
-    private float gravityValue = -9.81f;
-
-    [SerializeField]
-    Rigidbody rigidbody;
+    Rigidbody rb;
 
     [SerializeField]
     SerialGyroInputHandler serialGyroInputHandler;
-
-    public CharacterController controller;
-    private PlayerInput playerInput;
-    private Vector3 playerVelocity;
-    private bool groundedPlayer;
-
-    private InputAction moveAction;
-    private InputAction jumpAction;
 
     [SerializeField]
     Transform truckTransform;
 
     private Vector3 lastTruckPosition;
-
-    private void Awake()
-    {
-        controller = GetComponent<CharacterController>();
-        playerInput = GetComponent<PlayerInput>();
-
-        moveAction = playerInput.actions["Move"];
-        jumpAction = playerInput.actions["Jump"];
-    }
+    private float rotAngle;
     private void Start()
     {
-        
-
         lastTruckPosition = truckTransform.position;
-
     }
 
     void Update()
     {
-        groundedPlayer = controller.isGrounded;
 
-        if (groundedPlayer)
-        {
-            // Slight downward velocity to keep grounded stable
-            if (playerVelocity.y < -2f)
-                playerVelocity.y = -2f;
-        }
-
-        Vector3 truckMovement = new Vector3((truckTransform.position.x - lastTruckPosition.x) * 0.6f, 0, truckTransform.position.z - lastTruckPosition.z);
-        controller.Move(truckMovement);
-        lastTruckPosition = truckTransform.position;
+        //Vector3 truckMovement = new Vector3((truckTransform.position.x - lastTruckPosition.x) * 0.6f, 0, truckTransform.position.z - lastTruckPosition.z);
+        //controller.Move(truckMovement);
+        //lastTruckPosition = truckTransform.position;
 
 
         // Read input
-        //Vector2 input = moveAction.ReadValue<Vector2>();
-        //Vector3 move = new Vector3(input.x, 0, input.y);
-        //move = Vector3.ClampMagnitude(move, 1f);
-        Vector3 move = new Vector3(serialGyroInputHandler.rotAngle.y, 0, 0);
+        rotAngle = serialGyroInputHandler.rotAngle.y;
+        Vector3 move = new Vector3(-rotAngle, 0, 0);
         move = Vector3.ClampMagnitude(move, 1f);
         
 
-        if (move != Vector3.zero)
-            transform.forward = move;
-
-        // Jump using WasPressedThisFrame()
-        if (groundedPlayer && jumpAction.WasPressedThisFrame())
+        if(move != Vector3.zero)
         {
-            playerVelocity.y = Mathf.Sqrt(jumpHeight * -2f * gravityValue);
+            rb.AddForce(transform.right * move.x * playerSpeed);
         }
-
-        // Apply gravity
-        playerVelocity.y += gravityValue * Time.deltaTime;
-
-        // Move
-        Vector3 finalMove = move * playerSpeed + Vector3.up * playerVelocity.y;
-        controller.Move(finalMove * Time.deltaTime);
     }
 }
