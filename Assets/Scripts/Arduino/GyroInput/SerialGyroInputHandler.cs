@@ -8,6 +8,7 @@ public class SerialGyroInputHandler : MonoBehaviour
     string portName;
 
     public Vector3 rotSpeed;
+    public Vector3 rotAngle;
     public int resetAngle;
 
     private SerialPort serial;
@@ -16,6 +17,8 @@ public class SerialGyroInputHandler : MonoBehaviour
     {
         serial = new SerialPort(portName, 115200);
         serial.ReadTimeout = 10;
+
+        rotAngle = Vector3.zero;
 
         try
         {
@@ -32,6 +35,9 @@ public class SerialGyroInputHandler : MonoBehaviour
     {
         if (serial == null || !serial.IsOpen)
             return;
+
+        if (resetAngle == 1)
+            rotAngle = Vector3.zero;
         
         try
         {
@@ -49,6 +55,7 @@ public class SerialGyroInputHandler : MonoBehaviour
                 int.TryParse(values[3], NumberStyles.Integer, CultureInfo.InvariantCulture, out int reset)
         ) {
                 rotSpeed = new Vector3(rotX, rotY, rotZ);
+                rotAngle -= rotSpeed * Time.deltaTime;
                 resetAngle = reset;
             } 
         }

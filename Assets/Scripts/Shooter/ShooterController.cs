@@ -15,6 +15,9 @@ public class ShooterController : MonoBehaviour
     [SerializeField]
     Rigidbody rigidbody;
 
+    [SerializeField]
+    SerialGyroInputHandler serialGyroInputHandler;
+
     public CharacterController controller;
     private PlayerInput playerInput;
     private Vector3 playerVelocity;
@@ -61,9 +64,10 @@ public class ShooterController : MonoBehaviour
 
 
         // Read input
-        Vector2 input = moveAction.ReadValue<Vector2>();
-        Debug.Log($"Input : {input}");
-        Vector3 move = new Vector3(input.x, 0, input.y);
+        //Vector2 input = moveAction.ReadValue<Vector2>();
+        //Vector3 move = new Vector3(input.x, 0, input.y);
+        //move = Vector3.ClampMagnitude(move, 1f);
+        Vector3 move = new Vector3(serialGyroInputHandler.rotAngle.y, 0, 0);
         move = Vector3.ClampMagnitude(move, 1f);
         
 

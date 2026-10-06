@@ -337,7 +337,6 @@ GameObject:
   m_Component:
   - component: {fileID: 288391603}
   - component: {fileID: 288391605}
-  - component: {fileID: 288391604}
   m_Layer: 0
   m_Name: Gun
   m_TagString: Untagged
@@ -361,21 +360,6 @@ Transform:
   - {fileID: 554929769}
   m_Father: {fileID: 735636253}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &288391604
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 288391602}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9cf216ec1cc587b4f8b1c79bd1523f6d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SerialGyroInputHandler
-  portName: COM4
-  rotSpeed: {x: 0, y: 0, z: 0}
-  resetAngle: 0
 --- !u!114 &288391605
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -388,8 +372,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ef0ae8a5e7e1b5b439e1953ffc993a74, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GunController
-  gyroInputHandler: {fileID: 288391604}
-  aimSensitivity: 1
+  gyroInputHandler: {fileID: 735636258}
+  aimSensitivity: 50
 --- !u!1 &554929768
 GameObject:
   m_ObjectHideFlags: 0
@@ -518,6 +502,7 @@ GameObject:
   - component: {fileID: 735636255}
   - component: {fileID: 735636254}
   - component: {fileID: 735636257}
+  - component: {fileID: 735636258}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -665,6 +650,7 @@ MonoBehaviour:
   jumpHeight: 1.5
   gravityValue: -9.81
   rigidbody: {fileID: 0}
+  serialGyroInputHandler: {fileID: 735636258}
   controller: {fileID: 735636254}
   truckTransform: {fileID: 735636253}
 --- !u!114 &735636256
@@ -716,6 +702,22 @@ MonoBehaviour:
     Controllers: []
   PlayerIndex: -1
   AutoEnableInputs: 1
+--- !u!114 &735636258
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 735636249}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9cf216ec1cc587b4f8b1c79bd1523f6d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SerialGyroInputHandler
+  portName: COM4
+  rotSpeed: {x: 0, y: 0, z: 0}
+  rotAngle: {x: 0, y: 0, z: 0}
+  resetAngle: 0
 --- !u!1 &981299119
 GameObject:
   m_ObjectHideFlags: 0
