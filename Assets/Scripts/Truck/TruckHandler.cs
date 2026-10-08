@@ -42,7 +42,6 @@ public class TruckHandler : MonoBehaviour
 
     private void Start()
     {
-
         startPositionZ = transform.position.z;
     }
 

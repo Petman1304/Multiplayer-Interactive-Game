@@ -16,11 +16,12 @@ public class DistanceUIHandler : MonoBehaviour
     CanvasGroup gameOverCanvasGroup;
 
     //reference
+    [SerializeField]
     TruckHandler playerTruckHandler;
 
     private void Awake()
     {
-        playerTruckHandler = GameObject.FindGameObjectWithTag("Player").GetComponent<TruckHandler>();
+        //playerTruckHandler = GameObject.FindGameObjectWithTag("Player").GetComponent<TruckHandler>();
         playerTruckHandler.OnPlayerCrashed += PlayerTruckHandler_OnPlayerCrashed;
     }
 

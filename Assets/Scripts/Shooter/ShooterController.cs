@@ -41,4 +41,20 @@ public class ShooterController : MonoBehaviour
             rb.AddForce(transform.right * move.x * playerSpeed);
         }
     }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        if(collision.gameObject.tag == "TruckPlatform")
+        {
+            transform.SetParent(collision.transform, true);
+        }
+    }
+
+    private void OnCollisionExit(Collision collision)
+    {
+        if(collision.gameObject.tag == "TruckPlatform")
+        {
+            transform.SetParent(collision.transform, false);
+        }
+    }
 }
