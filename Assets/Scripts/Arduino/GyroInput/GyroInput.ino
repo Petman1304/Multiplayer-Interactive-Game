@@ -10,11 +10,45 @@
 
 float deadzone(float data);
 
+
+// data
+
+sensors_event_t a, g, temp;
+
 float rotX, rotY, rotZ;
+
+float Ax, Ay, Az;
+float Gx, Gy, Gz;
+
+float roll, pitch, yaw;
+
 float epsilon = 0.1;
 int resetBtn = 6;
 
+//calibration
+float xMax = 1.02;
+float xMin = -0.96;
+float yMin = -1.03;
+float yMax = 0.98;
+float zMax = 1;
+float zMin = -1.05;
+
+
+float xOffset = (xMax + xMin)/2;
+float yOffset = (yMax + yMin)/2;
+float zOffset = (zMax + zMin)/2;
+
+float xScale = 2 / (xMax - xMin);
+float yScale = 2 / (yMax - yMin);
+float zScale = 2 / (zMax - zMin);
+
+float yawOffset;
+
+
 Adafruit_MPU6050 mpu;
+
+unsigned long lastMillis, currentMillis;
+float dt;
 
 void setup(void) {
   Serial.begin(115200);
@@ -48,7 +82,7 @@ void setup(void) {
     Serial.println("+-16G");
     break;
   }
-  mpu.setGyroRange(MPU6050_RANGE_500_DEG);
+  mpu.setGyroRange(MPU6050_RANGE_1000_DEG);
   Serial.print("Gyro range set to: ");
   switch (mpu.getGyroRange()) {
   case MPU6050_RANGE_250_DEG:
@@ -91,36 +125,73 @@ void setup(void) {
     break;
   }
 
+  float yawSum = 0;
+  for(int i = 0; i < 100; i++){
+    mpu.getEvent(&a, &g, &temp);
+    yawSum += g.gyro.z;
+    delay(50);
+  }
+
+  yawOffset = yawSum / 100;
+  Serial.print("yawOffset:");
+  Serial.println(yawOffset);
+
+
   Serial.println("");
 
-  pinMode(resetBtn, INPUT);
-  delay(100);
+  pinMode(5, INPUT);
+
+  lastMillis = millis();
 }
 
 void loop() {
   /* Get new sensor events with the readings */
-  sensors_event_t a, g, temp;
   mpu.getEvent(&a, &g, &temp);
+  
+  Ax = a.acceleration.x / 9.81;
+  Ax = (Ax - xOffset) * xScale;
+  Ay = a.acceleration.y / 9.81;
+  Ay = (Ay - yOffset) * yScale;
+  Az = a.acceleration.z / 9.81;
+  Az = (Az - zOffset) * zScale;
 
-  // Serial.print("Rotation X: ");
-  Serial.print(deadzone(g.gyro.x));
-  Serial.print(",");
-  // Serial.print(", Y: ");
-  Serial.print(deadzone(g.gyro.y));
-  // Serial.print(", Z: ");
-  Serial.print(",");
-  Serial.print(deadzone(g.gyro.z));
-  Serial.print(",");
-  Serial.println(digitalRead(resetBtn));
-  // Serial.println(" rad/s");
+  pitch = atan2(Ay, sqrt(Az*Az + Ax*Ax));
+  roll = atan2(Ax, sqrt(Az*Az + Ay*Ay));
 
-  // Serial.println("");
+  currentMillis = millis();
+  dt = (currentMillis - lastMillis);
+  if(abs(g.gyro.z - yawOffset) > 0.01){
+    yaw -= (g.gyro.z - yawOffset)*dt*0.001 ;
+  }
+  lastMillis = currentMillis;
+  
+
+  // Serial.print("Ax:");
+  // Serial.print(Ax);
+  // Serial.print(",");
+  // Serial.print("Ay:");
+  // Serial.print(Ay);
+  // Serial.print(",");
+  // Serial.print("Az:");
+  // Serial.print(Az);
+  // Serial.print(",");
+  // Serial.print("UL:");
+  // Serial.print(1);
+  // Serial.print(",");
+  // Serial.print("IL:");
+  // Serial.println(-1);
+
+  // Serial.print("roll:");
+  Serial.print(roll);
+  Serial.print(",");
+  // Serial.print("pitch:");
+  Serial.print(pitch);
+  Serial.print(",");
+  // Serial.print("yaw:");
+  Serial.print(yaw);
+  Serial.print(",");
+  Serial.println(digitalRead(5));
+
   delay(50);
 }
 
-float deadzone(float data){
-  if(abs(data) < 0.1)
-    return 0.0;
-  else
-    return data;
-}
