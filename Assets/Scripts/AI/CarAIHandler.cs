@@ -15,6 +15,11 @@ public class CarAIHandler : MonoBehaviour
     [SerializeField]
     MeshCollider meshCollider;
 
+    [SerializeField]
+    Rigidbody truckRigidBody;
+
+    private Rigidbody rigidbody;
+
     //Collision detection
     RaycastHit[] raycastHits = new RaycastHit[1];
     bool isCarAhead = false;
@@ -29,6 +34,9 @@ public class CarAIHandler : MonoBehaviour
             Destroy(this);
             return;
         }
+
+        rigidbody = GetComponent<Rigidbody>();
+        truckRigidBody = GameObject.FindGameObjectWithTag("Player").GetComponent<Rigidbody>();
     }
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -38,17 +46,9 @@ public class CarAIHandler : MonoBehaviour
     }
 
     // Update is called once per frame
-    void Update()
+    void FixedUpdate()
     {
-        float accelerationInput = 0.0f;
-        float steerInput = 0.0f;
-
-        if (isCarAhead)
-            accelerationInput = -1.0f;
-
-        steerInput = Mathf.Clamp(steerInput, -1.0f, 1.0f);
-
-        carHandler.SetInput(new Vector2(steerInput, accelerationInput));
+        rigidbody.linearVelocity = new Vector3(0, 0, truckRigidBody.linearVelocity.z * 0.8f);
 
         //Debug.Log("AI Updated");
     }

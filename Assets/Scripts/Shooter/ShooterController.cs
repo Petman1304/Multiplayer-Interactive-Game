@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.InputSystem;
 
 public class ShooterController : MonoBehaviour
@@ -13,48 +13,24 @@ public class ShooterController : MonoBehaviour
     SerialGyroInputHandler serialGyroInputHandler;
 
     [SerializeField]
-    Transform truckTransform;
+    Rigidbody truckRigidBody;
 
     private Vector3 lastTruckPosition;
     private float rotAngle;
     private void Start()
     {
-        lastTruckPosition = truckTransform.position;
+        lastTruckPosition = truckRigidBody.position;
     }
 
-    void Update()
+    void FixedUpdate()
     {
-
-        //Vector3 truckMovement = new Vector3((truckTransform.position.x - lastTruckPosition.x) * 0.6f, 0, truckTransform.position.z - lastTruckPosition.z);
-        //controller.Move(truckMovement);
-        //lastTruckPosition = truckTransform.position;
-
-
         // Read input
         rotAngle = serialGyroInputHandler.rotAngle.y;
-        Vector3 move = new Vector3(-rotAngle, 0, 0);
-        move = Vector3.ClampMagnitude(move, 1f);
-        
+        Vector3 playerMovement = Vector3.ClampMagnitude(new Vector3(-rotAngle, 0, 0), 1f);
+        playerMovement = transform.right * playerMovement.x * playerSpeed * Time.fixedDeltaTime;
 
-        if(move != Vector3.zero)
-        {
-            rb.AddForce(transform.right * move.x * playerSpeed);
-        }
+        rb.MovePosition(rb.position + playerMovement);
     }
 
-    private void OnCollisionEnter(Collision collision)
-    {
-        if(collision.gameObject.tag == "TruckPlatform")
-        {
-            transform.SetParent(collision.transform, true);
-        }
-    }
 
-    private void OnCollisionExit(Collision collision)
-    {
-        if(collision.gameObject.tag == "TruckPlatform")
-        {
-            transform.SetParent(collision.transform, false);
-        }
-    }
 }
