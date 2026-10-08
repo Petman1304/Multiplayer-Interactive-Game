@@ -25,12 +25,12 @@ public class ShooterController : MonoBehaviour
     void FixedUpdate()
     {
         // Read input
-        rotAngle = serialGyroInputHandler.rotAngle.y;
-        Vector3 playerMovement = Vector3.ClampMagnitude(new Vector3(-rotAngle, 0, 0), 1f);
-        playerMovement = transform.right * playerMovement.x * playerSpeed * Time.fixedDeltaTime;
-
-        rb.MovePosition(rb.position + playerMovement);
+        rotAngle = serialGyroInputHandler.rotAngle.x;
+        if(Mathf.Abs(rotAngle) > 0.1)
+        {
+            Vector3 playerMovement = Vector3.ClampMagnitude(new Vector3(-rotAngle, 0, 0), 1f);
+            playerMovement = transform.right * playerMovement.x * playerSpeed * Time.fixedDeltaTime;
+            rb.MovePosition(rb.position + playerMovement);
+        }
     }
-
-
 }

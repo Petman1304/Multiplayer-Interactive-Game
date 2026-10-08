@@ -7,7 +7,6 @@ public class SerialGyroInputHandler : MonoBehaviour
     [SerializeField]
     string portName;
 
-    public Vector3 rotSpeed;
     public Vector3 rotAngle;
     public int resetAngle;
 
@@ -54,8 +53,7 @@ public class SerialGyroInputHandler : MonoBehaviour
                 float.TryParse(values[2], NumberStyles.Float, CultureInfo.InvariantCulture, out float rotZ) &&
                 int.TryParse(values[3], NumberStyles.Integer, CultureInfo.InvariantCulture, out int reset)
         ) {
-                rotSpeed = new Vector3(rotX, rotY, rotZ);
-                rotAngle -= rotSpeed * Time.deltaTime;
+                rotAngle = new Vector3(rotX, rotY, rotZ);
                 resetAngle = reset;
             } 
         }

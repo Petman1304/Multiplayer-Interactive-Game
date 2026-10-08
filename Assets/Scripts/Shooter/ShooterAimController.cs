@@ -28,7 +28,7 @@ public class ShooterAimController : MonoBehaviour
             aimCamera.SetActive(true);
 
             //StartCoroutine(showReticle());
-            Vector3 inputAngel = new Vector3(serialGyroInputHandler.rotAngle.z, -serialGyroInputHandler.rotAngle.x, 0);
+            Vector3 inputAngel = new Vector3(serialGyroInputHandler.rotAngle.z, serialGyroInputHandler.rotAngle.y, 0);
 
             cinemachineRotation.TargetOffset = startOffset + inputAngel*aimSensitivity;
 

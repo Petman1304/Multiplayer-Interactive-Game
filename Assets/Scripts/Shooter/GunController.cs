@@ -38,8 +38,8 @@ public class GunController : MonoBehaviour
         //    ShootGun();
         //}
 
-        _gyroInput = gyroInputHandler.rotSpeed * Time.deltaTime;
-        _currentRot -= new Vector3(_gyroInput.x, _gyroInput.z, 0);
+        _gyroInput = gyroInputHandler.rotAngle;
+        _currentRot = new Vector3(-_gyroInput.y, _gyroInput.z, 0);
 
         transform.rotation = Quaternion.Euler(_currentRot * aimSensitivity);
     }
