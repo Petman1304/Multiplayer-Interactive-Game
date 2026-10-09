@@ -13,8 +13,8 @@ public class InputHandler : MonoBehaviour
     InputAction moveAction;
 
     //InputAction resetAction;
-
-    private PlayerInput playerInput;
+    [SerializeField]
+    PlayerInput playerInput;
 
 
     //private void Awake()
