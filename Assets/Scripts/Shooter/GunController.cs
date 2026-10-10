@@ -54,7 +54,6 @@ public class GunController : MonoBehaviour
         BulletController bulletController = bullet.GetComponent<BulletController>();
         if (Physics.Raycast(cameraTransform.position, cameraTransform.forward, out hit, Mathf.Infinity))
         {
-            
             bulletController.target = hit.point;
             bulletController.hit = true;
         }

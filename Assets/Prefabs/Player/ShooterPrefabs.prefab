@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 317037741955130929}
   - component: {fileID: 3665739642922452078}
   - component: {fileID: 3595002616749599478}
-  m_Layer: 0
+  m_Layer: 2
   m_Name: Model
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -125,7 +125,7 @@ GameObject:
   - component: {fileID: 7165115423861113899}
   - component: {fileID: 5518381766965111537}
   - component: {fileID: 2690483710396991347}
-  m_Layer: 0
+  m_Layer: 2
   m_Name: ShooterMainCamera
   m_TagString: MainCamera
   m_Icon: {fileID: 0}
@@ -293,7 +293,7 @@ GameObject:
   - component: {fileID: 2588591972133501740}
   - component: {fileID: 6790572887259619142}
   - component: {fileID: 6457101692998259523}
-  m_Layer: 5
+  m_Layer: 2
   m_Name: Reticle
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -366,7 +366,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6196245334539153948}
-  m_Layer: 0
+  m_Layer: 2
   m_Name: Barrel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -400,7 +400,7 @@ GameObject:
   - component: {fileID: 8305776618185172539}
   - component: {fileID: 6570576887447536078}
   - component: {fileID: 3673367776858741021}
-  m_Layer: 0
+  m_Layer: 2
   m_Name: Move Camera
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -524,7 +524,7 @@ GameObject:
   - component: {fileID: 7581853743386529585}
   - component: {fileID: 5975227289516457200}
   - component: {fileID: 7203362588200672211}
-  m_Layer: 0
+  m_Layer: 2
   m_Name: Player Aiming Core
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -618,7 +618,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1938329679373099966}
   - component: {fileID: 7857558912311408280}
-  m_Layer: 0
+  m_Layer: 2
   m_Name: Gun
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -667,7 +667,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 579217866737294789}
-  m_Layer: 0
+  m_Layer: 2
   m_Name: Target
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -701,7 +701,7 @@ GameObject:
   - component: {fileID: 682333938639391807}
   - component: {fileID: 8287530840036652249}
   - component: {fileID: 131235643173642414}
-  m_Layer: 5
+  m_Layer: 2
   m_Name: Aim Canvas
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -804,7 +804,7 @@ GameObject:
   - component: {fileID: 353234861074025087}
   - component: {fileID: 1992150692494345050}
   - component: {fileID: 5652266924163842193}
-  m_Layer: 0
+  m_Layer: 2
   m_Name: Google
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -920,7 +920,7 @@ GameObject:
   - component: {fileID: 398772528204052651}
   - component: {fileID: 6851693069224497856}
   - component: {fileID: 3289072888099576674}
-  m_Layer: 0
+  m_Layer: 2
   m_Name: Player
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1041,7 +1041,7 @@ MonoBehaviour:
   playerSpeed: 40
   rb: {fileID: 3289072888099576674}
   serialGyroInputHandler: {fileID: 398772528204052651}
-  truckTransform: {fileID: 6775089984636637945}
+  truckRigidBody: {fileID: 0}
 --- !u!114 &398772528204052651
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1055,7 +1055,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SerialGyroInputHandler
   portName: COM4
-  rotSpeed: {x: 0, y: 0, z: 0}
   rotAngle: {x: 0, y: 0, z: 0}
   resetAngle: 0
 --- !u!114 &6851693069224497856
@@ -1111,7 +1110,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1944841326086295308}
-  m_Layer: 0
+  m_Layer: 2
   m_Name: ShooterPrefabs
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1149,7 +1148,7 @@ GameObject:
   - component: {fileID: 1013096578980970127}
   - component: {fileID: 1241735221617343228}
   - component: {fileID: 1333271420836288786}
-  m_Layer: 0
+  m_Layer: 2
   m_Name: Aim Camera
   m_TagString: Untagged
   m_Icon: {fileID: 0}
