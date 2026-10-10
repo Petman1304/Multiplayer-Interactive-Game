@@ -46,8 +46,8 @@ public class GunController : MonoBehaviour
 
     void ShootGun()
     {
-        if (gyroInputHandler.resetAngle == 0)
-            return;
+        //if (gyroInputHandler.resetAngle == 0)
+        //    return;
 
         RaycastHit hit;
         GameObject bullet = GameObject.Instantiate(bulletPrefab, barrelTransform.position, Quaternion.identity);
@@ -69,8 +69,13 @@ public class GunController : MonoBehaviour
     {
         while (true)
         {
-            ShootGun();
-            yield return fireRate;
+            if(gyroInputHandler.resetAngle == 1)
+            {
+                ShootGun();
+                yield return fireRate;
+            }
+
+            yield return null;
         }
     }
 }

@@ -42,7 +42,7 @@ float xScale = 2 / (xMax - xMin);
 float yScale = 2 / (yMax - yMin);
 float zScale = 2 / (zMax - zMin);
 
-float yawOffset;
+float yawOffset = -0.02;
 
 
 Adafruit_MPU6050 mpu;
@@ -125,16 +125,16 @@ void setup(void) {
     break;
   }
 
-  float yawSum = 0;
-  for(int i = 0; i < 100; i++){
-    mpu.getEvent(&a, &g, &temp);
-    yawSum += g.gyro.z;
-    delay(50);
-  }
+  // float yawSum = 0;
+  // for(int i = 0; i < 100; i++){
+  //   mpu.getEvent(&a, &g, &temp);
+  //   yawSum += g.gyro.z;
+  //   delay(50);
+  // }
 
-  yawOffset = yawSum / 100;
-  Serial.print("yawOffset:");
-  Serial.println(yawOffset);
+  // yawOffset = yawSum / 100;
+  // Serial.print("yawOffset:");
+  // Serial.println(yawOffset);
 
 
   Serial.println("");

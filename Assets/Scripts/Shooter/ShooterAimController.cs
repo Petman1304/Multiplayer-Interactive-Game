@@ -5,8 +5,8 @@ using Unity.Cinemachine;
 
 public class ShooterAimController : MonoBehaviour
 {
-    public GameObject moveCamera;
-    public GameObject aimCamera;
+    public CinemachineCamera moveCamera;
+    public CinemachineCamera aimCamera;
     public SerialGyroInputHandler serialGyroInputHandler;
     public CinemachineRotationComposer cinemachineRotation;
 
@@ -20,12 +20,15 @@ public class ShooterAimController : MonoBehaviour
     }
 
     // Update is called once per frame
-    void Update()
+    void FixedUpdate()
     {
         if(serialGyroInputHandler.resetAngle == 1)
         {
-            moveCamera.SetActive(false);
-            aimCamera.SetActive(true);
+            //moveCamera.SetActive(false);
+            //aimCamera.SetActive(true);
+
+            moveCamera.Priority = 0;
+            aimCamera.Priority = 1;
 
             //StartCoroutine(showReticle());
             Vector3 inputAngel = new Vector3(serialGyroInputHandler.rotAngle.z, serialGyroInputHandler.rotAngle.y, 0);
@@ -35,8 +38,11 @@ public class ShooterAimController : MonoBehaviour
         }
         else
         {
-            moveCamera.SetActive(true);
-            aimCamera.SetActive(false);
+            //moveCamera.SetActive(true);
+            //aimCamera.SetActive(false);
+
+            moveCamera.Priority = 1;
+            aimCamera.Priority = 0;
         }
     }
 

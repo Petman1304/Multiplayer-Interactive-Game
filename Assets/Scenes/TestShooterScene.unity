@@ -578,6 +578,11 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 6775089984636637945, guid: d8c3601ea14d41f47aca828b841aded6, type: 3}
   m_PrefabInstance: {fileID: 3122232374421658401}
   m_PrefabAsset: {fileID: 0}
+--- !u!54 &1291537559 stripped
+Rigidbody:
+  m_CorrespondingSourceObject: {fileID: 3289072888099576674, guid: d8c3601ea14d41f47aca828b841aded6, type: 3}
+  m_PrefabInstance: {fileID: 3122232374421658401}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1410496994
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1309,6 +1314,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Shooter
       objectReference: {fileID: 0}
+    - target: {fileID: 8762313959793667839, guid: d8c3601ea14d41f47aca828b841aded6, type: 3}
+      propertyPath: truckRigidBody
+      value: 
+      objectReference: {fileID: 1291537559}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
