@@ -2,7 +2,8 @@ int pinA = 2;
 int pinB = 3;
 int pinSwitch = 4;
 int encoderPinAPrev, encoderPinACurr, encoderPinB;
-int pulseCount;
+int delayPrint;
+volatile int pulseCount;
 float rotAngle;
 float toRad = 2*3.14 / 40;
 bool bool_CW;
@@ -15,6 +16,7 @@ void setup() {
   pinMode(pinSwitch, INPUT_PULLUP);
 
   pulseCount = 0;
+  delayPrint = 0;
 
   encoderPinAPrev = digitalRead(pinA); 
 }
@@ -28,19 +30,25 @@ void loop() {
     // CCW
     if(encoderPinB == encoderPinACurr){
       bool_CW = false;
-      pulseCount++;
+      pulseCount--;
     }
     // CW
     else{
       bool_CW = true;
-      pulseCount--;
+      pulseCount++;
     }
   }
 
   encoderPinAPrev = encoderPinACurr;
-  rotAngle = pulseCount * toRad;
+
+  if(delayPrint == 100){
+    rotAngle = pulseCount * toRad;
+    Serial.println(rotAngle);
+    delayPrint = 0;
+  }
   
-  Serial.println(rotAngle);
+  
+  delayPrint++;
   delay(1);
 }
 
