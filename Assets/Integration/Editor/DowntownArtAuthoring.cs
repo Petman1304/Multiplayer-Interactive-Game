@@ -31,7 +31,6 @@ public static class DowntownArtAuthoring
             MakeMaterial("CityGround", new Color(.24f,.27f,.23f)), MakeMaterial("CityAsphalt", new Color(.16f,.18f,.19f)),
             MakeMaterial("CitySidewalk", new Color(.49f,.48f,.44f)), MakeMaterial("CityCurb", new Color(.68f,.67f,.61f)),
             MakeMaterial("CityMarkings", new Color(.88f,.87f,.76f)) };
-        var proxy = MakeMaterial("CityDistantFacade", new Color(.47f,.50f,.50f));
         var orange = MakeMaterial("CityConstruction", new Color(.85f,.39f,.13f)); var dark = MakeMaterial("CityStreetFurniture", new Color(.12f,.16f,.18f));
         var sign = MakeMaterial("CitySign", new Color(.08f,.32f,.29f));
         string definitionPath = Root + "/DowntownEnvironment.asset";
@@ -53,18 +52,16 @@ public static class DowntownArtAuthoring
                     foreach (var renderer in renderers) total.Encapsulate(renderer.bounds);
                     float scale = .4f; // The same authored-unit conversion as the truck and Petrus road.
                     var near = new GameObject("Original Petrus artwork").transform; near.SetParent(group, false);
-                    var nearRenderers = new List<Renderer>();
                     foreach (var renderer in renderers)
                     {
                         var mesh = renderer.GetComponent<MeshFilter>()?.sharedMesh; if (mesh == null) continue;
                         var child = new GameObject(renderer.name, typeof(MeshFilter), typeof(MeshRenderer)); child.transform.SetParent(near, false);
                         child.transform.localPosition = (renderer.transform.position - new Vector3(total.center.x, total.min.y, total.center.z)) * scale;
                         child.transform.localRotation = renderer.transform.rotation; child.transform.localScale = renderer.transform.lossyScale * scale;
-                        child.GetComponent<MeshFilter>().sharedMesh = mesh; child.GetComponent<MeshRenderer>().sharedMaterials = renderer.sharedMaterials; nearRenderers.Add(child.GetComponent<Renderer>());
+                        child.GetComponent<MeshFilter>().sharedMesh = mesh; child.GetComponent<MeshRenderer>().sharedMaterials = renderer.sharedMaterials;
                     }
-                    var far = Box("Distant silhouette", group, new Vector3(0, total.size.y * scale * .5f, 0), total.size * scale, proxy).GetComponent<Renderer>();
-                    far.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-                    var lod = group.gameObject.AddComponent<LODGroup>(); lod.SetLODs(new[] { new LOD(.12f, nearRenderers.ToArray()), new LOD(.018f, new[] { far }) }); lod.RecalculateBounds();
+                    // Keep complete facades throughout the visible range. Screen-relative box LODs
+                    // replaced small buildings well before the fog hid them. The tile pool bounds scenery.
                 }
                 for (int side = -1; side <= 1; side += 2) for (int row = 0; row < 2; row++)
                 {

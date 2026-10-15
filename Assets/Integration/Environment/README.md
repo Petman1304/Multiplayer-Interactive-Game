@@ -42,9 +42,10 @@ municipal-square clock-tower landmark. Road width is 16 m; lanes are spaced 5.2 
 Buildings are rendering copies of named Petrus building groups, uniformly converted
 at 0.4 units and positioned along route tangents. They are not deformed. The curve
 sweeps only road, ground, sidewalk, curb-top, and marking meshes. Lamp housings and
-construction furniture are decorative and contain no lights or colliders. Near
-building artwork has simple shared-mesh distant silhouettes; small props disappear
-past 120 route metres. Original imported meshes and materials are unchanged.
+construction furniture are decorative and contain no lights or colliders. Buildings keep their complete source geometry throughout the visible range; plain
+box replacement LODs have been removed because they hid facades too early. The
+bounded tile pool, camera far clip, and fog limit scenery coverage. Small props
+disappear past 120 route metres. Original imported meshes and materials are unchanged.
 
 Seven prewarmed 100 m tiles cover the requested 350 m forward / 80 m rear window
 with recycling slack. Each tile owns a fixed road mesh buffer and prewarmed module
@@ -144,3 +145,13 @@ Still required manually before declaring the performance/multiplayer acceptance 
 3. Both physical serial controllers, including unplug/reconnect and calibration.
 4. Ten-minute Low and Balanced captures after resolving memory pressure; verify FPS,
    CPU/GPU frame times, GC allocations, and sustained memory stability.
+
+## Building visibility correction
+
+Removed screen-relative box LODs from all 36 frontage groups in the six modules,
+and from the authoring recipe. Serialized asset checks confirm all six original
+artwork groups per module and every renderer enabled. This removes 252 proxy
+transforms from the seven-tile pool (expected total 1,373). The pool count and
+updated visual result still need Editor verification: Unity crashed during script
+reload in native `ScriptCommands::Rebuild` / `MenuController::GetChecked` before
+post-reload previews could run. No second Editor or Play session was launched.
