@@ -168,3 +168,29 @@ build at 1280x720 with the Editor closed against the prior version, then measure
 CPU/GPU frame times and a 10-minute memory capture separately. The pure-check suite
 is not a frame-time benchmark or evidence of 60 FPS. No Play/build/profile run was
 started automatically during this implementation.
+
+## Continuous light traffic
+
+The authored cursor no longer determines whether the road has any traffic. A
+separate host-only stream attempts a straight-driving outer-lane car every six
+seconds, retrying failed admission no more than once per second. It targets up to
+two traffic vehicles ahead, or one during pursuit, and reserves two pool slots for
+authored encounters. The original four/six/eight active-threat limits remain.
+It yields space before authored hazards and police, leaves 55 m between candidate
+vehicles and existing hazards, uses the same four-second warning bounds and moving
+corridor checker, and stops introducing cars for the last 150 m of the district.
+
+Bend quiet zones still suppress authored obstacle waves and lane changes. Light
+cruise traffic can appear there only in an outer lane away from the truck, leaving
+its current corridor clear and passing full wave admission. Solo Debug and LAN use
+the same host scheduling path.
+
+`LevelVerification.Density()` replays one centred-driver circuit at constant
+22/30/42 m/s with and without the light stream, using the real admission functions.
+Traffic within 160 route metres ahead increased from 46/46/53% to 72/81/86% of
+samples; longest traffic-free intervals fell from 18.5/13/8.5 s to 8.5/2.5/2.5 s.
+The replay checks the active budget and requires at least 70% forward coverage,
+at most nine seconds empty, and four background cars at each tested speed.
+These are scheduling measurements, not a rendered visibility or performance test;
+they exclude the introduction and final recovery and do not simulate player combat
+or every steering action. Repeat Solo Debug manually to assess how the pacing feels.

@@ -9,6 +9,51 @@ using UnityEngine;
 public static class LevelVerification
 {
     static void Check(bool condition, string message) { if (!condition) throw new Exception("Level verification: " + message); }
+    public static string Density(RouteDefinition suppliedRoute = null)
+    {
+        var route=suppliedRoute!=null?suppliedRoute:AssetDatabase.LoadAssetAtPath<RouteDefinition>(DowntownRouteAuthoring.AssetPath);
+        var report=new System.Text.StringBuilder();
+        foreach(float speed in new[]{22f,30,42})for(int mode=0;mode<2;mode++)
+        {
+            var live=new RoadThreat[18];var scratch=new RoadThreat[20];var wave=new RoadThreat[2];
+            var previous=new bool[43];var next=new bool[43];
+            var state=new RoundState{Speed=speed,RouteSeed=7919}; int index=0,sequence=0,spawned=0;long circuit=0;
+            float cooldown=0,nextAmbient=1,retry=0,visibleTime=0,measuredTime=0,empty=0,maxEmpty=0;
+            while(state.Distance<route.Length)
+            {
+                state.Elapsed+=.5f;state.Distance+=speed*.5;
+                state.LateralSpeed=RouteGeometry.CurveDrift(route,state.Distance,speed);
+                for(int i=0;i<live.Length;i++)if(live[i].Active)
+                {
+                    var t=live[i];
+                    if(t.Kind==ThreatKind.Police){EncounterMotion.PoliceStep(route,ref t,state.Distance,0,speed,.5f);if(!t.Active)cooldown=state.Elapsed+12;}
+                    else {EncounterMotion.TrafficStep(ref t,.5f);if(t.RouteDistance-state.Distance < -25)t.Active=false;}
+                    live[i]=t;
+                }
+                int active=0;for(int i=0;i<live.Length;i++)if(live[i].Active)scratch[active++]=live[i];
+                var decision=EncounterDirector.Schedule(route,state,circuit,index,scratch,active,wave,previous,next,cooldown,out int count);
+                if(decision!=WaveAdmission.Pending)
+                {
+                    if(decision==WaveAdmission.Ready)for(int part=0;part<count;part++)for(int i=0;i<live.Length;i++)if(!live[i].Active){live[i]=wave[part];break;}
+                    index++;if(index>=route.Encounters.Length){index=0;circuit++;}
+                }
+                if(mode==1 && state.Elapsed>=nextAmbient && state.Elapsed>=retry)
+                {
+                    retry=state.Elapsed+1;active=0;for(int i=0;i<live.Length;i++)if(live[i].Active)scratch[active++]=live[i];
+                    if(EncounterDirector.Ambient(route,state,0,sequence,index,scratch,active,previous,next,out var car))
+                        for(int i=0;i<live.Length;i++)if(!live[i].Active){live[i]=car;sequence++;spawned++;nextAmbient=state.Elapsed+6;break;}
+                }
+                active=0;bool visible=false;
+                foreach(var t in live)if(t.Active){active++;if(t.Kind==ThreatKind.Traffic && t.RouteDistance-state.Distance>0 && t.RouteDistance-state.Distance<160)visible=true;}
+                Check(active<=EncounterMotion.Budget(0),"density replay threat budget");
+                if(state.Distance>=60 && state.Distance<1650)
+                { measuredTime+=.5f;if(visible){visibleTime+=.5f;empty=0;}else{empty+=.5f;maxEmpty=Mathf.Max(maxEmpty,empty);} }
+            }
+            if(mode==1)Check(visibleTime/measuredTime>=.70f && maxEmpty<=9 && spawned>=4,"continuous first-circuit traffic coverage");
+            report.AppendLine($"{speed:0}m/s {(mode==0?"authored":"with ambient")}: traffic within 160m {visibleTime/measuredTime:P0}; max empty {maxEmpty:0.0}s; ambient cars {spawned}");
+        }
+        return report.ToString();
+    }
     public static string Run(RouteDefinition suppliedRoute = null)
     {
         var route = suppliedRoute != null ? suppliedRoute : AssetDatabase.LoadAssetAtPath<RouteDefinition>(DowntownRouteAuthoring.AssetPath);
@@ -64,6 +109,22 @@ public static class LevelVerification
         Check(signalled,"first-circuit lane change actually admitted between bend quiet zones");
         var quietPolice=new RoadThreat{Active=true,Kind=ThreatKind.Police,Phase=ThreatPhase.Approach,Age=3,RouteDistance=270,Speed=24};
         Check(EncounterMotion.PoliceStep(route,ref quietPolice,300,0,24,.02f)==PursuitEvent.None && quietPolice.Phase==ThreatPhase.Approach,"pressure phase does not begin at bend entry");
+        round=new RoundState{Distance=100,Speed=22,Elapsed=5,RouteSeed=7919};
+        Check(EncounterDirector.Ambient(route,round,0,0,0,scratch,0,previous,next,out var ambient),"ambient traffic fills authored gaps");
+        Check(ambient.Kind==ThreatKind.Traffic && ambient.Phase==ThreatPhase.Cruise && Mathf.Abs(ambient.LaneOffset)==5.2f,"ambient stays in an outer lane");
+        var warning=EncounterMotion.Predict(ambient,4);
+        Check(warning.RouteDistance-round.Distance-EncounterMotion.Travel(round.Speed,4)>8,"ambient minimum warning");
+        for(int i=0;i<2;i++)scratch[i]=new RoadThreat{Active=true,Kind=ThreatKind.Repair};
+        Check(!EncounterDirector.Ambient(route,round,0,0,0,scratch,2,previous,next,out _),"ambient reserves two authored slots");
+        scratch[0]=new RoadThreat{Active=true,Kind=ThreatKind.Police};
+        scratch[1]=new RoadThreat{Active=true,Kind=ThreatKind.Traffic,RouteDistance=200};
+        Check(!EncounterDirector.Ambient(route,round,0,0,0,scratch,2,previous,next,out _),"pursuit ahead-traffic limit");
+        round.Distance=900;
+        Check(!EncounterDirector.Ambient(route,round,0,0,policeIndex,scratch,0,previous,next,out _),"police approach reserves traffic space");
+        round.Distance=330;round.TruckX=1;
+        Check(EncounterDirector.Ambient(route,round,0,0,3,scratch,0,previous,next,out var quietCar) && quietCar.LaneOffset<0,"quiet-zone cruise leaves current truck corridor open");
+        round.Distance=1650;
+        Check(!EncounterDirector.Ambient(route,round,0,0,7,scratch,0,previous,next,out _),"final recovery remains clear");
         // Impossible wall, including swept paths, must be rejected.
         for (int i = 0; i < 3; i++) scratch[i] = new RoadThreat { Active = true, Kind = ThreatKind.Barricade, LaneOffset = (i-1)*5.2f, RouteDistance = 120 };
         Check(!EncounterMotion.SafeWave(route, 0, 0, 22, scratch, 3, 8, previous, next), "full road wall rejected");
