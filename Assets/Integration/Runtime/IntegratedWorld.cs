@@ -7,6 +7,8 @@ namespace Getaway.Integration
     public class IntegratedWorld : MonoBehaviour
     {
         public GameObject TruckArtwork, ShooterArtwork, TrafficArtwork, BuildingArtwork, SectionArtwork;
+        public RouteDefinition Route;
+        public bool UseDowntownRoute;
         public static IntegratedWorld Instance { get; private set; }
         public Camera View { get; private set; }
         [Tooltip("First-person seat position, in integration world units relative to the truck.")]
@@ -32,6 +34,8 @@ namespace Getaway.Integration
         readonly Dictionary<GameObject, Bounds> artworkBounds = new();
         readonly LineRenderer[] tracers = new LineRenderer[8];
         readonly float[] tracerExpires = new float[8];
+        readonly double[] tracerAnchors = new double[8];
+        readonly Vector3[] tracerStarts = new Vector3[8], tracerEnds = new Vector3[8];
         int tracerIndex, lastRound = -1, lastHull = GetawayRules.MaxHull;
         float hitUntil, damageUntil;
         double renderedDistance;
@@ -281,7 +285,7 @@ namespace Getaway.Integration
             }
             else
             {
-                if (!Artwork(TrafficArtwork, root, Vector3.zero))
+                if (!Artwork(TrafficArtwork, root, size))
                     Box("Vehicle", root, new Vector3(0, .9f, 0), new Vector3(2.3f, 1.8f, 4.5f), new Color(.55f, .21f, .18f));
                 if (data.Kind == ThreatKind.Police)
                 {
@@ -298,8 +302,11 @@ namespace Getaway.Integration
             bool snap = state.Round != lastRound || state.Phase == RoundPhase.Lobby;
             lastRound = state.Round;
             float blend = snap ? 1 : 1 - Mathf.Exp(-18 * Time.deltaTime);
-            truck.position = Vector3.Lerp(truck.position, new Vector3(state.TruckX, 0, 0), blend);
-            truck.rotation = Quaternion.identity;
+            renderedDistance = snap ? state.Distance : renderedDistance + (state.Distance - renderedDistance) * blend;
+            var route = GetawayRules.Route;
+            var routePose = route != null ? route.Sample(renderedDistance) : default;
+            truck.position = route != null ? routePose.Right * state.TruckX : new Vector3(state.TruckX, 0, 0);
+            truck.rotation = route != null ? routePose.Rotation : Quaternion.identity;
             Vector3 shooterPosition = GetawayRules.RearShooterSpawn + Vector3.right * state.RoofX;
             roof.localPosition = Vector3.Lerp(roof.localPosition, shooterPosition, blend);
             if (steeringWheel != null)
@@ -315,7 +322,6 @@ namespace Getaway.Integration
                 roof.localPosition = shooterPosition + new Vector3(Mathf.Sign(state.RoofX) * fallingTime * 2, -4.9f * fallingTime * fallingTime, 0);
             }
             else fallingTime = 0;
-            renderedDistance += (state.Distance - renderedDistance) * blend;
             float scroll = (float)(renderedDistance % 200);
             for (int i = 0; i < chunks.Length; i++)
             {
@@ -333,7 +339,9 @@ namespace Getaway.Integration
                 var threat = session.Threats[i]; bool fresh = threatViews[i] == null || threatIds[i] != threat.Id || threatKinds[i] != threat.Kind;
                 if (fresh) BuildThreat(i, threat);
                 threatViews[i].gameObject.SetActive(true);
-                Vector3 target = new Vector3(threat.X + GetawayRules.RoadOffset(state.Distance, threat.Z), 0, threat.Z);
+                var threatPose = route != null ? route.Sample(threat.RouteDistance) : default;
+                Vector3 target = route != null ? threatPose.RelativeTo(routePose, threat.LaneOffset) : new Vector3(threat.X + GetawayRules.RoadOffset(state.Distance, threat.Z), 0, threat.Z);
+                threatViews[i].rotation = route != null ? threatPose.Rotation : Quaternion.identity;
                 threatViews[i].position = fresh || snap ? target : Vector3.Lerp(threatViews[i].position, target, blend);
             }
             bool driverView = input != null && input.ViewingDriver;
@@ -364,12 +372,17 @@ namespace Getaway.Integration
                 renderer.forceRenderingOff = live && !driverView && !renderer.transform.IsChildOf(gun);
             if (state.Hull < lastHull) { damageUntil = Time.unscaledTime + .5f; audioSource.PlayOneShot(impactSound); }
             lastHull = state.Hull;
-            for (int i = 0; i < tracers.Length; i++) tracers[i].enabled = Time.unscaledTime < tracerExpires[i];
+            for (int i = 0; i < tracers.Length; i++)
+            {
+                tracers[i].enabled = Time.unscaledTime < tracerExpires[i];
+                if (tracers[i].enabled && route != null) { Vector3 shift = route.Sample(tracerAnchors[i]).RelativeTo(routePose); tracers[i].SetPosition(0, tracerStarts[i] + shift); tracers[i].SetPosition(1, tracerEnds[i] + shift); }
+            }
         }
-        public void ShowShot(Vector3 from, Vector3 to, bool hit)
+        public void ShowShot(Vector3 from, Vector3 to, bool hit, double anchorDistance = 0)
         {
             int i = tracerIndex++ % tracers.Length;
             if (tracers[i] == null) return;
+            tracerAnchors[i] = anchorDistance; tracerStarts[i] = from; tracerEnds[i] = to;
             tracers[i].SetPosition(0, from); tracers[i].SetPosition(1, to); tracerExpires[i] = Time.unscaledTime + .08f;
             audioSource.PlayOneShot(shotSound);
             if (hit) hitUntil = Time.unscaledTime + .16f;

@@ -83,7 +83,7 @@ namespace Getaway.Integration
         {
             if (!IsServer || Session != this || State.Value.Phase != RoundPhase.Lobby || !CanStart()) return;
             int round = simulation.Round + 1;
-            simulation = new RoundState { Phase = RoundPhase.Countdown, Hull = GetawayRules.MaxHull, Countdown = 3, Round = round, Pitch = 4, Balance = 100, Ammo = GetawayRules.Magazine, Reserve = 72 };
+            simulation = new RoundState { Phase = RoundPhase.Countdown, Hull = GetawayRules.MaxHull, Countdown = 3, Round = round, RouteSeed = round * 7919, Pitch = 4, Balance = 100, Ammo = GetawayRules.Magazine, Reserve = 72 };
             random = new System.Random(round * 7919);
             policeAttackIn = 3;
             spawnIn = 1.5f; repairIn = 18; nextThreat = 0;
@@ -160,11 +160,13 @@ namespace Getaway.Integration
             bool shooterFresh = Time.unscaledTime - shooter.lastInput < .35f;
             simulation.Elapsed += dt;
             simulation.Speed = Mathf.MoveTowards(simulation.Speed, Mathf.Min(42, 22 + simulation.Elapsed * .065f), dt * 5);
+            double previousDistance = simulation.Distance;
+            var route = GetawayRules.Route;
             float previousTruckX = simulation.TruckX;
             simulation.Steering = driverFresh ? driver.steer : 0;
             float previousLateral = simulation.LateralSpeed;
             simulation.LateralSpeed = Mathf.MoveTowards(simulation.LateralSpeed, simulation.Steering * 8, dt * 22);
-            float roadShift = GetawayRules.RoadOffset(simulation.Distance, simulation.Speed * dt);
+            float roadShift = route != null ? RouteGeometry.CurveDrift(route, simulation.Distance, simulation.Speed) * dt : GetawayRules.RoadOffset(simulation.Distance, simulation.Speed * dt);
             simulation.TruckX += simulation.LateralSpeed * dt - roadShift;
             if (Mathf.Abs(simulation.TruckX) > GetawayRules.MaxTruckCenterX)
             {
@@ -173,8 +175,9 @@ namespace Getaway.Integration
                 if (simulation.Phase == RoundPhase.Wrecked) return;
             }
             float jolt = simulation.LateralSpeed - previousLateral;
-            simulation.RoofVelocity += -jolt * .095f;
-            simulation.RoofVelocity = Mathf.MoveTowards(simulation.RoofVelocity, 0, dt * 1.4f);
+            float curvePush = route != null ? -Mathf.Clamp(route.Sample(simulation.Distance).Curvature * simulation.Speed * simulation.Speed, -14, 14) * .075f : 0;
+            simulation.RoofVelocity -= jolt * .095f;
+            simulation.RoofVelocity = Mathf.MoveTowards(simulation.RoofVelocity, curvePush, dt * 1.4f);
             simulation.RoofX += ((shooterFresh ? shooter.walk : 0) * 2.2f + simulation.RoofVelocity) * dt;
             float strain = Mathf.Abs(simulation.RoofX) > GetawayRules.RoofHalfWidth * .75f ? 20 : 0;
             simulation.Balance = Mathf.Clamp(simulation.Balance + dt * (strain > 0 ? -strain : 12) - Mathf.Abs(jolt) * .8f, 0, 100);
@@ -197,12 +200,14 @@ namespace Getaway.Integration
             for (int i = 0; i < Threats.Count; i++)
             {
                 var t = Threats[i]; if (!t.Active) continue;
+                var previousThreat = t;
                 float before = t.Z;
-                t.Z += (t.Speed - simulation.Speed) * dt;
+                if (route != null) { t.RouteDistance += t.Speed * dt; t.Z = (float)(t.RouteDistance - simulation.Distance); }
+                else t.Z += (t.Speed - simulation.Speed) * dt;
                 // Police gradually track the truck, leaving a visible, dodgeable approach.
                 if (t.Kind == ThreatKind.Police && t.Z > 12 && t.Z < 80)
-                    t.X = Mathf.MoveTowards(t.X, simulation.TruckX, dt * .65f);
-                if (GetawayRules.CrossesTruck(GetawayRules.PresentedThreat(t, simulation.Distance), before, simulation.TruckX, previousTruckX))
+                    { if (route != null) t.LaneOffset = Mathf.MoveTowards(t.LaneOffset, simulation.TruckX, dt * .65f); else t.X = Mathf.MoveTowards(t.X, simulation.TruckX, dt * .65f); }
+                if (route != null ? RouteGeometry.CrossesTruck(route, previousThreat, t, previousDistance, simulation.Distance, previousTruckX, simulation.TruckX) : GetawayRules.CrossesTruck(GetawayRules.PresentedThreat(t, simulation.Distance), before, simulation.TruckX, previousTruckX))
                 {
                     t.Active = false;
                     if (t.Kind == ThreatKind.Repair)
@@ -237,7 +242,7 @@ namespace Getaway.Integration
             // Never spawn overlapping threats; every wave leaves at least two lanes open.
             for (int i = 0; i < Threats.Count; i++)
                 if (Threats[i].Active && Mathf.Abs(Threats[i].Z - z) < 22) return;
-            Threats[slot] = new RoadThreat { Active = true, Id = ++nextThreat, Kind = kind, X = x, Z = z,
+            Threats[slot] = new RoadThreat { Active = true, Id = ++nextThreat, Kind = kind, X = x, Z = z, LaneOffset = x, RouteDistance = simulation.Distance + z,
                 Health = kind == ThreatKind.Police ? 3 : kind == ThreatKind.Traffic ? 2 : 1,
                 Speed = kind == ThreatKind.Barricade || repair ? 0 : kind == ThreatKind.Police ? 4 : 10 };
         }
@@ -245,15 +250,19 @@ namespace Getaway.Integration
         {
             if (simulation.ReloadTime > 0) return;
             if (simulation.Ammo <= 0) { StartReload(); return; }
-            Vector3 origin = GetawayRules.Muzzle(simulation.TruckX, simulation.RoofX);
+            var route = GetawayRules.Route;
+            Vector3 origin = route != null ? RouteGeometry.Muzzle(route, simulation.Distance, simulation.TruckX, simulation.RoofX) : GetawayRules.Muzzle(simulation.TruckX, simulation.RoofX);
             Vector3 direction = GetawayRules.Direction(simulation.Yaw, simulation.Pitch);
+            if (route != null) direction = route.Sample(simulation.Distance).Rotation * direction;
             Ray ray = new Ray(origin, direction);
             float nearest = 190; int hit = -1;
             for (int i = 0; i < Threats.Count; i++)
             {
                 var threat = Threats[i];
                 if (!threat.Active || threat.Kind == ThreatKind.Repair) continue;
-                if (GetawayRules.ThreatBounds(GetawayRules.PresentedThreat(threat, simulation.Distance)).IntersectRay(ray, out float distance) && distance >= 0 && distance < nearest)
+                float distance;
+                bool intersects = route != null ? RouteGeometry.Raycast(route, threat, simulation.Distance, ray, out distance) : GetawayRules.ThreatBounds(GetawayRules.PresentedThreat(threat, simulation.Distance)).IntersectRay(ray, out distance);
+                if (intersects && distance >= 0 && distance < nearest)
                 { nearest = distance; hit = i; }
             }
             simulation.Shots++; simulation.Ammo--;
@@ -263,9 +272,9 @@ namespace Getaway.Integration
                 if (t.Health <= 0) { t.Active = false; if (t.Kind == ThreatKind.Police) { simulation.PoliceDefeated++; simulation.Pursuit = Mathf.Max(0, simulation.Pursuit - 18); } simulation.Score += t.Kind == ThreatKind.Police ? 75 : 30; }
                 Threats[hit] = t;
             }
-            ShotClientRpc(origin, origin + direction * nearest, hit >= 0);
+            ShotClientRpc(origin, origin + direction * nearest, hit >= 0, simulation.Distance);
         }
-        [ClientRpc] void ShotClientRpc(Vector3 from, Vector3 to, bool hit)
-        { if (IntegratedWorld.Instance != null) IntegratedWorld.Instance.ShowShot(from, to, hit); }
+        [ClientRpc] void ShotClientRpc(Vector3 from, Vector3 to, bool hit, double anchorDistance)
+        { if (IntegratedWorld.Instance != null) IntegratedWorld.Instance.ShowShot(from, to, hit, anchorDistance); }
     }
 }

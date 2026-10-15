@@ -17,12 +17,12 @@ namespace Getaway.Integration
         public float Steering;
         public float TruckX, LateralSpeed, Speed, RoofX, Yaw, Pitch, Countdown, Invulnerability, Elapsed;
         public double Distance;
-        public int Hull, Score, Shots, Hits, Round, Ammo, Reserve, PoliceDefeated;
+        public int Hull, Score, Shots, Hits, Round, Ammo, Reserve, PoliceDefeated, RouteSeed;
         public float Balance, RoofVelocity, Pursuit, ReloadTime;
         public DefeatReason Defeat;
         public void NetworkSerialize<T>(BufferSerializer<T> s) where T : IReaderWriter
         {
-            s.SerializeValue(ref Steering);
+            s.SerializeValue(ref RouteSeed); s.SerializeValue(ref Steering);
             s.SerializeValue(ref Phase); s.SerializeValue(ref TruckX); s.SerializeValue(ref LateralSpeed);
             s.SerializeValue(ref Speed); s.SerializeValue(ref RoofX); s.SerializeValue(ref Yaw);
             s.SerializeValue(ref Pitch); s.SerializeValue(ref Countdown); s.SerializeValue(ref Invulnerability);
@@ -32,7 +32,7 @@ namespace Getaway.Integration
             s.SerializeValue(ref ReloadTime); s.SerializeValue(ref Defeat);
             s.SerializeValue(ref Score); s.SerializeValue(ref Shots); s.SerializeValue(ref Hits); s.SerializeValue(ref Round);
         }
-        public bool Equals(RoundState o) => Steering == o.Steering && Phase == o.Phase && TruckX == o.TruckX && LateralSpeed == o.LateralSpeed &&
+        public bool Equals(RoundState o) => RouteSeed == o.RouteSeed && Steering == o.Steering && Phase == o.Phase && TruckX == o.TruckX && LateralSpeed == o.LateralSpeed &&
             Speed == o.Speed && RoofX == o.RoofX && Yaw == o.Yaw && Pitch == o.Pitch && Countdown == o.Countdown &&
             Invulnerability == o.Invulnerability && Elapsed == o.Elapsed && Distance == o.Distance && Hull == o.Hull &&
             Ammo == o.Ammo && Reserve == o.Reserve && PoliceDefeated == o.PoliceDefeated && Balance == o.Balance && RoofVelocity == o.RoofVelocity && Pursuit == o.Pursuit && ReloadTime == o.ReloadTime && Defeat == o.Defeat && Score == o.Score && Shots == o.Shots && Hits == o.Hits && Round == o.Round;
@@ -43,14 +43,17 @@ namespace Getaway.Integration
     {
         public int Id, Health;
         public ThreatKind Kind;
-        public float X, Z, Speed;
+        public float X, Z, Speed; // X/Z are retained only for the rollback road.
+        public double RouteDistance;
+        public float LaneOffset;
         public bool Active;
         public void NetworkSerialize<T>(BufferSerializer<T> s) where T : IReaderWriter
         {
+            s.SerializeValue(ref RouteDistance); s.SerializeValue(ref LaneOffset);
             s.SerializeValue(ref Id); s.SerializeValue(ref Health); s.SerializeValue(ref Kind);
             s.SerializeValue(ref X); s.SerializeValue(ref Z); s.SerializeValue(ref Speed); s.SerializeValue(ref Active);
         }
-        public bool Equals(RoadThreat o) => Id == o.Id && Health == o.Health && Kind == o.Kind &&
+        public bool Equals(RoadThreat o) => RouteDistance == o.RouteDistance && LaneOffset == o.LaneOffset && Id == o.Id && Health == o.Health && Kind == o.Kind &&
             X == o.X && Z == o.Z && Speed == o.Speed && Active == o.Active;
     }
 
@@ -60,6 +63,7 @@ namespace Getaway.Integration
         public const int MaxHull = 5, ThreatSlots = 18;
         public const float RoadHalfWidth = 8f, RoofHalfWidth = 2.05f, FireInterval = .22f;
         public const int Magazine = 12;
+        public static RouteDefinition Route => IntegratedWorld.Instance != null && IntegratedWorld.Instance.UseDowntownRoute ? IntegratedWorld.Instance.Route : null;
         // Complete Truck ver 1 bounds measured through the Editor, after uniform 0.4 conversion.
         public static readonly Vector3 TruckCollisionCenter = new Vector3(0, 1.893f, -2);
         public static readonly Vector3 TruckCollisionSize = new Vector3(5.312f, 3.786f, 12);
