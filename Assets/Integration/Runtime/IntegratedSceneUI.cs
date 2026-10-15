@@ -279,13 +279,25 @@ namespace Getaway.Integration
             string role = input.ViewingDriver ? "DRIVER" : "SHOOTER";
             hudStats.text = $"HULL {state.Hull}/{GetawayRules.MaxHull}     {state.Distance:0} m     {state.Score} PTS     {state.Speed * 3.6f:0} km/h     POLICE {state.Pursuit:0}%";
             hudRole.text = $"{role} / FIRST PERSON     {(input.CustomController ? "CUSTOM CONTROLLER" : "KEYBOARD + MOUSE TEST")}     ESC: SETTINGS";
-            hudHint.text = debug ? "SOLO DEBUG / Tab: switch role / A-D: active role / Mouse: look or aim" : input.ViewingDriver ? "Watch traffic and listen to your navigator." : "A-D: balance / Mouse: aim / Click or Space: fire / R: reload";
+            hudHint.text = debug ? "SOLO DEBUG / Tab: switch role / A-D: active role / Mouse: look or aim" : input.ViewingDriver ? "Watch traffic and listen to your navigator." : "A-D: balance / Mouse: aim 360° / Click or Space: fire / R: reload";
             navigator.gameObject.SetActive(!input.ViewingDriver);
             var route = GetawayRules.Route;
             int turn; float until;
             if (route != null) route.NextBend(state.Distance, out turn, out until);
             else { turn = GetawayRules.Turn(state.Distance); until = GetawayRules.ToTurn(state.Distance); }
             navigator.text = $"NAVIGATOR / TELL YOUR DRIVER\n{(route != null ? route.DistrictName + " / 1 of " + route.DistrictCount : "District " + GetawayRules.District(state.Distance) + "/5")} / Circuit {(route != null ? route.Circuit(state.Distance) : GetawayRules.Circuit(state.Distance))} / {(turn < 0 ? "LEFT" : turn > 0 ? "RIGHT" : "STRAIGHT")} {(until > 0 ? $"in {until:0} m / {until / Mathf.Max(1, state.Speed):0.0}s" : "NOW")}\nBALANCE {state.Balance:0}% / AMMO {state.Ammo}/{state.Reserve}" + (state.ReloadTime > 0 ? $" / RELOADING {state.ReloadTime:0.0}s" : "");
+            if (!input.ViewingDriver)
+            {
+                string pursuit = ""; var session = IntegratedCrew.Session;
+                if (state.PoliceEventUntil > state.Elapsed)
+                    pursuit = state.PoliceEvent == PursuitEvent.Approaching ? "POLICE APPROACHING FROM BEHIND" :
+                        state.PoliceEvent == PursuitEvent.Escaped ? "POLICE LOST / ESCAPED" :
+                        state.PoliceEvent == PursuitEvent.Defeated ? "POLICE DEFEATED" :
+                        state.PoliceEvent == PursuitEvent.Withdrawn ? "POLICE FELL BACK" : "REAR PURSUIT / CAPTURE PRESSURE";
+                if (session != null) foreach (var t in session.Threats) if (t.Active && t.Kind == ThreatKind.Police)
+                    pursuit += $" / REAR {state.Distance - t.RouteDistance:0} m / {(t.Phase == ThreatPhase.Approach ? "APPROACH" : "PURSUIT")}";
+                if (pursuit.Length > 0) navigator.text += "\n" + pursuit;
+            }
             countdown.text = state.Phase == RoundPhase.Countdown ? "ROLLING IN " + Mathf.CeilToInt(state.Countdown) : "";
             deviceWarning.text = input.CustomController && !input.HasFreshSample ? "CONTROLLER INPUT LOST / Esc to reconnect or select keyboard testing" : "";
             damage.color = new Color(1, .15f, .08f, GetComponent<IntegratedWorld>().DamageFeedback * .18f);

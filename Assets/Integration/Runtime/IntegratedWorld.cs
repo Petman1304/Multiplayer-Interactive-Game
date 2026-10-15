@@ -47,7 +47,9 @@ namespace Getaway.Integration
         GUIStyle reticle;
         IntegratedInput input;
         AudioSource audioSource;
-        AudioClip shotSound, impactSound;
+        AudioClip shotSound, impactSound, sirenSound;
+        float heardPoliceEventUntil = -1;
+        readonly Transform[,] trafficIndicators = new Transform[GetawayRules.ThreatSlots, 2];
         public float HitFeedback => Mathf.Clamp01((hitUntil - Time.unscaledTime) * 6);
         public float DamageFeedback => Mathf.Clamp01((damageUntil - Time.unscaledTime) * 2);
         public void Initialize(IntegratedInput controls)
@@ -82,12 +84,12 @@ namespace Getaway.Integration
                 tracers[i].enabled = false;
             }
             audioSource = gameObject.AddComponent<AudioSource>(); audioSource.spatialBlend = 0; audioSource.volume = .22f;
-            shotSound = Tone("Shot", 130, .075f); impactSound = Tone("Impact", 65, .14f);
+            shotSound = Tone("Shot", 130, .075f); impactSound = Tone("Impact", 65, .14f); sirenSound = Tone("Siren", 650, 1.2f);
         }
         AudioClip Tone(string name, float frequency, float duration)
         {
             int count = (int)(22050 * duration); var data = new float[count];
-            for (int i = 0; i < count; i++) data[i] = Mathf.Sin(i * frequency * Mathf.PI * 2 / 22050) * Mathf.Pow(1 - i / (float)count, 3);
+            for (int i = 0; i < count; i++) data[i] = Mathf.Sin(i * (name == "Siren" ? frequency + 180 * Mathf.Sin(i * Mathf.PI * 4 / 22050) : frequency) * Mathf.PI * 2 / 22050) * Mathf.Pow(1 - i / (float)count, 3);
             var clip = AudioClip.Create(name, count, 1, 22050, false); clip.SetData(data, 0); return clip;
         }
         Material Material(Color color, bool unlit = false)
@@ -296,6 +298,15 @@ namespace Getaway.Integration
             {
                 if (!Artwork(TrafficArtwork, root, size))
                     Box("Vehicle", root, new Vector3(0, .9f, 0), new Vector3(2.3f, 1.8f, 4.5f), new Color(.55f, .21f, .18f));
+                if (data.Kind == ThreatKind.Traffic)
+                    for (int side = 0; side < 2; side++)
+                    {
+                        var indicator = new GameObject(side == 0 ? "Left indicators" : "Right indicators").transform;
+                        indicator.SetParent(root, false); trafficIndicators[slot, side] = indicator;
+                        for (int end = -1; end <= 1; end += 2)
+                            Box("Amber signal", indicator, new Vector3(side == 0 ? -1.7f : 1.7f, 1, end * 2.05f), new Vector3(.35f,.3f,.12f), new Color(1,.55f,.02f));
+                        indicator.gameObject.SetActive(false);
+                    }
                 if (data.Kind == ThreatKind.Police)
                 {
                     Box("Red beacon", root, new Vector3(-.5f, 2.2f, 0), new Vector3(.65f, .25f, .5f), new Color(1, .08f, .12f));
@@ -308,6 +319,8 @@ namespace Getaway.Integration
             if (truck == null) return;
             var session = IntegratedCrew.Session;
             RoundState state = session != null ? session.State.Value : new RoundState { Hull = GetawayRules.MaxHull };
+            if (state.PoliceEvent == PursuitEvent.Approaching && state.PoliceEventUntil > state.Elapsed && state.PoliceEventUntil != heardPoliceEventUntil)
+            { heardPoliceEventUntil = state.PoliceEventUntil; audioSource.PlayOneShot(sirenSound, .5f); }
             bool snap = state.Round != lastRound || state.Phase == RoundPhase.Lobby;
             lastRound = state.Round;
             float blend = snap ? 1 : 1 - Mathf.Exp(-18 * Time.deltaTime);
@@ -350,6 +363,10 @@ namespace Getaway.Integration
                 var threat = session.Threats[i]; bool fresh = threatViews[i] == null || threatIds[i] != threat.Id || threatKinds[i] != threat.Kind;
                 if (fresh) BuildThreat(i, threat);
                 threatViews[i].gameObject.SetActive(true);
+                if (threat.Kind == ThreatKind.Traffic)
+                    for (int side = 0; side < 2; side++) if (trafficIndicators[i, side] != null)
+                        trafficIndicators[i, side].gameObject.SetActive((threat.Phase == ThreatPhase.Signalling || threat.Phase == ThreatPhase.Changing)
+                            && (threat.TargetLane < threat.StartLane ? side == 0 : side == 1) && (int)(state.Elapsed * 3) % 2 == 0);
                 renderedThreatDistances[i] = fresh || snap ? threat.RouteDistance : renderedThreatDistances[i] + (threat.RouteDistance-renderedThreatDistances[i])*blend;
                 renderedThreatLanes[i] = fresh || snap ? threat.LaneOffset : Mathf.Lerp(renderedThreatLanes[i],threat.LaneOffset,blend);
                 var threatPose = route != null ? route.Sample(renderedThreatDistances[i]) : default;
@@ -432,7 +449,7 @@ namespace Getaway.Integration
             foreach (var material in insideTruckMaterials.Values) if (material != null) Destroy(material);
             foreach (var material in truckGlassMaterials.Values) if (material != null) Destroy(material);
             foreach (var template in artworkCache.Values) if (template != null) Destroy(template);
-            if (shotSound != null) Destroy(shotSound); if (impactSound != null) Destroy(impactSound);
+            if (sirenSound != null) Destroy(sirenSound); if (shotSound != null) Destroy(shotSound); if (impactSound != null) Destroy(impactSound);
         }
     }
 }

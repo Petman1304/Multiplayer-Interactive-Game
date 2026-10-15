@@ -219,7 +219,7 @@ namespace Getaway.Integration
                 }
                 if (route != null) {
                     if (t.Phase == ThreatPhase.Signalling && t.PhaseTime + dt >= t.SignalSeconds
-                        && (route.NearBendBoundary(simulation.Distance) || route.NearBendBoundary(t.RouteDistance)))
+                        && (route.NearBendBoundary(simulation.Distance)))
                     { t.Phase = ThreatPhase.Cruise; t.TargetLane = t.StartLane; }
                     EncounterMotion.TrafficStep(ref t, dt); t.Z = (float)(t.RouteDistance - simulation.Distance); }
                 else t.Z += (t.Speed - simulation.Speed) * dt;
@@ -271,7 +271,7 @@ namespace Getaway.Integration
                     if (t.Kind == ThreatKind.Traffic && t.RouteDistance > simulation.Distance) trafficAhead++;
                 }
                 bool suppressed = !recovery && route.NearBendBoundary(simulation.Distance);
-                suppressed |= police && (chasing || simulation.Elapsed < policeCooldownUntil);
+                suppressed |= police && (chasing || simulation.Elapsed < policeCooldownUntil || trafficAhead > 1);
                 suppressed |= chasing && (entry.Kind == EncounterKind.Staggered || entry.Kind == EncounterKind.LaneChange
                     || (entry.Kind == EncounterKind.SlowTraffic && trafficAhead >= 1) || entry.Kind == EncounterKind.BlockedLane);
                 int count = EncounterDirector.Count(entry, encounterCircuit);
@@ -290,8 +290,7 @@ namespace Getaway.Integration
                             if (admission[i].Kind != ThreatKind.Repair && admission[i].Kind != ThreatKind.Police
                                 && System.Math.Abs(admission[i].RouteDistance - wave[0].RouteDistance) < 60)
                                 reserved = false;
-                    if (entry.Kind == EncounterKind.LaneChange && (route.NearBendBoundary(simulation.Distance + EncounterMotion.Travel(simulation.Speed, wave[0].SignalSeconds))
-                        || route.NearBendBoundary(wave[0].RouteDistance + wave[0].Speed * wave[0].SignalSeconds))) reserved = false;
+                    if (entry.Kind == EncounterKind.LaneChange && (route.NearBendBoundary(simulation.Distance + EncounterMotion.Travel(simulation.Speed, wave[0].SignalSeconds)))) reserved = false;
                     if (!reserved) { wave[0].Phase = ThreatPhase.Cruise; wave[0].TargetLane = wave[0].StartLane; admission[obstacles] = wave[0]; }
                     // A staggered wave must finish before the recovery stretch or following encounter.
                     bool fits = entry.Kind != EncounterKind.Staggered || wave[count - 1].RouteDistance + 10 <

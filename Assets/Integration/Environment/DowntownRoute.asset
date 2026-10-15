@@ -781,26 +781,53 @@ MonoBehaviour:
     Kind: 0
   Encounters:
   - Distance: 200
-    Kind: 0
+    Kind: 4
     Lane: 0
+    SpeedFraction: 0
+    SignalSeconds: 0
+    ChangeSeconds: 0
   - Distance: 430
     Kind: 0
     Lane: 0
+    SpeedFraction: 0
+    SignalSeconds: 0
+    ChangeSeconds: 0
   - Distance: 690
-    Kind: 1
+    Kind: 5
     Lane: 0
+    SpeedFraction: 0
+    SignalSeconds: 0
+    ChangeSeconds: 0
   - Distance: 900
     Kind: 3
     Lane: 0
+    SpeedFraction: 0
+    SignalSeconds: 0
+    ChangeSeconds: 0
   - Distance: 980
     Kind: 2
     Lane: 0
+    SpeedFraction: 0
+    SignalSeconds: 0
+    ChangeSeconds: 0
+  - Distance: 1050
+    Kind: 4
+    Lane: 0
+    SpeedFraction: 0
+    SignalSeconds: 0
+    ChangeSeconds: 0
   - Distance: 1190
     Kind: 1
     Lane: 0
+    SpeedFraction: 0
+    SignalSeconds: 0
+    ChangeSeconds: 0
   - Distance: 1700
     Kind: 3
     Lane: 0
+    SpeedFraction: 0
+    SignalSeconds: 0
+    ChangeSeconds: 0
   Points:
   - Distance: 0
     X: 0
