@@ -383,6 +383,17 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 331597676}
   m_CullTransparentMesh: 1
+--- !u!114 &501312931 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6910280398575302855, guid: 11135b3e1e61011439126f6eddf46c6c, type: 3}
+  m_PrefabInstance: {fileID: 6223690886559598680}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fa415bd429d2e7c40b395514cd976ab6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TruckHandler
 --- !u!1 &729958107
 GameObject:
   m_ObjectHideFlags: 0
@@ -503,7 +514,7 @@ MonoBehaviour:
   distanceTravelledText: {fileID: 2125486576}
   gameOverText: {fileID: 1050560501}
   gameOverCanvasGroup: {fileID: 871047152}
-  playerTruckHandler: {fileID: 0}
+  playerTruckHandler: {fileID: 501312931}
 --- !u!1 &871047147
 GameObject:
   m_ObjectHideFlags: 0
@@ -1650,6 +1661,22 @@ PrefabInstance:
     - target: {fileID: 200491323305564610, guid: 11135b3e1e61011439126f6eddf46c6c, type: 3}
       propertyPath: m_Name
       value: Truck
+      objectReference: {fileID: 0}
+    - target: {fileID: 6910280398575302855, guid: 11135b3e1e61011439126f6eddf46c6c, type: 3}
+      propertyPath: maxSteerVelocity
+      value: 100
+      objectReference: {fileID: 0}
+    - target: {fileID: 6910280398575302855, guid: 11135b3e1e61011439126f6eddf46c6c, type: 3}
+      propertyPath: truckAcceleration
+      value: 50
+      objectReference: {fileID: 0}
+    - target: {fileID: 6910280398575302855, guid: 11135b3e1e61011439126f6eddf46c6c, type: 3}
+      propertyPath: maxForwardVelocity
+      value: 200
+      objectReference: {fileID: 0}
+    - target: {fileID: 6910280398575302855, guid: 11135b3e1e61011439126f6eddf46c6c, type: 3}
+      propertyPath: steerInputMultiplier
+      value: 100
       objectReference: {fileID: 0}
     - target: {fileID: 8880349155424627702, guid: 11135b3e1e61011439126f6eddf46c6c, type: 3}
       propertyPath: m_LocalPosition.x
