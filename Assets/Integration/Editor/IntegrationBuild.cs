@@ -5,6 +5,7 @@ using UnityEditor.Build.Reporting;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using Unity.Netcode;
+using UnityEngine.SceneManagement;
 
 public static class IntegrationBuild
 {
@@ -23,7 +24,10 @@ public static class IntegrationBuild
         Require(GetawayRules.ThreatBounds(threat).IntersectRay(new Ray(new Vector3(0, 1, 0), Vector3.forward)), "Shot intersects target geometry");
         Require(!GetawayRules.ThreatBounds(threat).IntersectRay(new Ray(new Vector3(6, 1, 0), Vector3.forward)), "Shot misses adjacent lane");
         Require(GetawayRules.Axis(float.NaN, .1f) == 0 && GetawayRules.Axis(.05f, .1f) == 0 && GetawayRules.Axis(2, .1f) == 1, "Safe input deadzone and clamping");
-        var opened = EditorSceneManager.OpenScene(Scene, OpenSceneMode.Additive);
+        Debug.Log(DowntownVerification.Geometry());
+        var opened = SceneManager.GetSceneByPath(Scene);
+        bool alreadyOpen = opened.IsValid() && opened.isLoaded;
+        if (!alreadyOpen) opened = EditorSceneManager.OpenScene(Scene, OpenSceneMode.Additive);
         try
         {
             IntegratedGetaway game = null; NetworkManager manager = null;
@@ -34,7 +38,7 @@ public static class IntegrationBuild
             Require(game.GetComponent<IntegratedWorld>().TruckArtwork != null && game.GetComponent<IntegratedWorld>().ShooterArtwork != null, "Branch artwork references resolve");
             Require(game.GetComponent<NetworkStartUI>() == null, "Legacy lobby is excluded");
         }
-        finally { EditorSceneManager.CloseScene(opened, true); }
+        finally { if (!alreadyOpen) EditorSceneManager.CloseScene(opened, true); }
         Debug.Log("GETAWAY_RULES_PASS: packet validation, collision, aiming, scene and prefab references");
     }
     public static void VerifyAndBuild()

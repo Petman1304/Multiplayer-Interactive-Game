@@ -6,6 +6,7 @@ public static class DowntownRenderingAuthoring
 {
     public static void Create()
     {
+        if (EditorApplication.isPlaying) throw new System.InvalidOperationException("Stop Play before authoring.");
         var environment = AssetDatabase.LoadAssetAtPath<DowntownEnvironmentDefinition>(DowntownArtAuthoring.Root + "/DowntownEnvironment.asset");
         string rendererPath = DowntownArtAuthoring.Root + "/CityRenderer.asset";
         var renderer = AssetDatabase.LoadAssetAtPath<UniversalRendererData>(rendererPath);
@@ -14,7 +15,7 @@ public static class DowntownRenderingAuthoring
             renderer = Object.Instantiate(AssetDatabase.LoadAssetAtPath<UniversalRendererData>("Assets/Settings/PC_Renderer.asset"));
             renderer.name = "CityRenderer"; renderer.rendererFeatures.Clear(); AssetDatabase.CreateAsset(renderer, rendererPath);
         }
-        var rendererSettings = new SerializedObject(renderer); rendererSettings.FindProperty("m_RenderingMode").intValue = 0; rendererSettings.ApplyModifiedPropertiesWithoutUndo();
+        var rendererSettings = new SerializedObject(renderer); rendererSettings.FindProperty("m_RendererFeatureMap").ClearArray(); rendererSettings.FindProperty("m_RenderingMode").intValue = 0; rendererSettings.ApplyModifiedPropertiesWithoutUndo();
         for (int preset = 0; preset < 2; preset++)
         {
             string name = preset == 0 ? "CityLow" : "CityBalanced", path = DowntownArtAuthoring.Root + "/" + name + ".asset";

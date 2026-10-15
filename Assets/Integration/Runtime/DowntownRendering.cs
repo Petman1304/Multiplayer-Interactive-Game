@@ -20,12 +20,12 @@ namespace Getaway.Integration
         Color previousFogColor, previousSkyColor, previousEquatorColor, previousGroundColor;
         float previousFogStart, previousFogEnd;
         Camera view;
-        int selected;
+        int selected, previousFrameRate;
         public void Initialize(Camera camera, DowntownEnvironmentDefinition art)
         {
             if (applied) return;
             Instance = this; applied = true; definition = art; view = camera;
-            previousPipeline = QualitySettings.renderPipeline;
+            previousPipeline = QualitySettings.renderPipeline; previousFrameRate = Application.targetFrameRate; Application.targetFrameRate = 60;
             previousSky = RenderSettings.skybox; previousSun = RenderSettings.sun;
             previousFog = RenderSettings.fog; previousFogMode = RenderSettings.fogMode; previousFogColor = RenderSettings.fogColor;
             previousFogStart = RenderSettings.fogStartDistance; previousFogEnd = RenderSettings.fogEndDistance;
@@ -56,6 +56,7 @@ namespace Getaway.Integration
         {
             if (!applied) return;
             if (QualitySettings.renderPipeline == definition.Low || QualitySettings.renderPipeline == definition.Balanced) QualitySettings.renderPipeline = previousPipeline;
+            Application.targetFrameRate = previousFrameRate;
             RenderSettings.skybox = previousSky; RenderSettings.sun = previousSun;
             RenderSettings.fog = previousFog; RenderSettings.fogMode = previousFogMode; RenderSettings.fogColor = previousFogColor;
             RenderSettings.fogStartDistance = previousFogStart; RenderSettings.fogEndDistance = previousFogEnd;

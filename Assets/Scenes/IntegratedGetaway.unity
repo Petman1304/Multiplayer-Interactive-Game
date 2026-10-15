@@ -3198,7 +3198,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1171283488
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3704,7 +3704,10 @@ MonoBehaviour:
   TrafficArtwork: {fileID: 311583443184671273, guid: fa099c3e6963daa489b259dc3b164e7c, type: 3}
   BuildingArtwork: {fileID: 332876142039642805, guid: 3dedbb17a9c0e2d4cbb0ee7b8e40d9e9, type: 3}
   SectionArtwork: {fileID: 2863588064189201699, guid: fdf48c2329e14288b6ff9cca54af147f, type: 3}
-  DriverEye: {x: -0.65, y: 2.7, z: 3.5}
+  Route: {fileID: 11400000, guid: 7d36558042e24d9afa96ea90663948ca, type: 2}
+  CityArtwork: {fileID: 11400000, guid: 6426f076498879843a8de106721b8e2a, type: 2}
+  UseDowntownRoute: 1
+  DriverEye: {x: 1.02, y: 2.48, z: 1.89}
   ShooterEye: {x: 0, y: 2.2, z: 0.1}
 --- !u!114 &1437152397
 MonoBehaviour:
@@ -3858,7 +3861,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1463801955
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5056,7 +5059,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &2140259163
 MonoBehaviour:
   m_ObjectHideFlags: 0
