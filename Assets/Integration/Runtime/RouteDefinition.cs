@@ -4,10 +4,10 @@ using UnityEngine;
 namespace Getaway.Integration
 {
     public enum CitySectionKind : byte { BoulevardA, BoulevardB, LeftBend, RightBend, Construction, Landmark }
-    public enum EncounterKind : byte { BlockedLane, Staggered, Police, Recovery }
+    public enum EncounterKind : byte { BlockedLane, Staggered, Police, Recovery, SlowTraffic, LaneChange }
     [Serializable] public struct RouteCurve { public Vector3 P0, P1, P2, P3; }
     [Serializable] public struct CitySection { public double Start, Length; public CitySectionKind Kind; }
-    [Serializable] public struct RouteEncounter { public double Distance; public EncounterKind Kind; public int Lane; }
+    [Serializable] public struct RouteEncounter { public double Distance; public EncounterKind Kind; public int Lane; public float SpeedFraction, SignalSeconds, ChangeSeconds; }
     [Serializable] public struct RoutePoint
     {
         public double Distance, X, Z;

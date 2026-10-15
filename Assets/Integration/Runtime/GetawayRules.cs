@@ -19,9 +19,11 @@ namespace Getaway.Integration
         public double Distance;
         public int Hull, Score, Shots, Hits, Round, Ammo, Reserve, PoliceDefeated, RouteSeed;
         public float Balance, RoofVelocity, Pursuit, ReloadTime;
+        public PursuitEvent PoliceEvent; public float PoliceEventUntil;
         public DefeatReason Defeat;
         public void NetworkSerialize<T>(BufferSerializer<T> s) where T : IReaderWriter
         {
+            s.SerializeValue(ref PoliceEvent); s.SerializeValue(ref PoliceEventUntil);
             s.SerializeValue(ref RouteSeed); s.SerializeValue(ref Steering);
             s.SerializeValue(ref Phase); s.SerializeValue(ref TruckX); s.SerializeValue(ref LateralSpeed);
             s.SerializeValue(ref Speed); s.SerializeValue(ref RoofX); s.SerializeValue(ref Yaw);
@@ -32,16 +34,21 @@ namespace Getaway.Integration
             s.SerializeValue(ref ReloadTime); s.SerializeValue(ref Defeat);
             s.SerializeValue(ref Score); s.SerializeValue(ref Shots); s.SerializeValue(ref Hits); s.SerializeValue(ref Round);
         }
-        public bool Equals(RoundState o) => RouteSeed == o.RouteSeed && Steering == o.Steering && Phase == o.Phase && TruckX == o.TruckX && LateralSpeed == o.LateralSpeed &&
+        public bool Equals(RoundState o) => PoliceEvent == o.PoliceEvent && PoliceEventUntil == o.PoliceEventUntil && RouteSeed == o.RouteSeed && Steering == o.Steering && Phase == o.Phase && TruckX == o.TruckX && LateralSpeed == o.LateralSpeed &&
             Speed == o.Speed && RoofX == o.RoofX && Yaw == o.Yaw && Pitch == o.Pitch && Countdown == o.Countdown &&
             Invulnerability == o.Invulnerability && Elapsed == o.Elapsed && Distance == o.Distance && Hull == o.Hull &&
             Ammo == o.Ammo && Reserve == o.Reserve && PoliceDefeated == o.PoliceDefeated && Balance == o.Balance && RoofVelocity == o.RoofVelocity && Pursuit == o.Pursuit && ReloadTime == o.ReloadTime && Defeat == o.Defeat && Score == o.Score && Shots == o.Shots && Hits == o.Hits && Round == o.Round;
     }
 
+    public enum ThreatPhase : byte { Cruise, Signalling, Changing, Approach, Pursuing }
+    public enum PursuitEvent : byte { None, Approaching, Pursuing, Escaped, Defeated, Withdrawn }
+
     [Serializable]
     public struct RoadThreat : INetworkSerializable, IEquatable<RoadThreat>
     {
         public int Id, Health;
+        public ThreatPhase Phase;
+        public float StartLane, TargetLane, PhaseTime, SignalSeconds, ChangeSeconds, Age, EscapeTime;
         public ThreatKind Kind;
         public float X, Z, Speed; // X/Z are retained only for the rollback road.
         public double RouteDistance;
@@ -49,11 +56,14 @@ namespace Getaway.Integration
         public bool Active;
         public void NetworkSerialize<T>(BufferSerializer<T> s) where T : IReaderWriter
         {
+            s.SerializeValue(ref Phase); s.SerializeValue(ref StartLane); s.SerializeValue(ref TargetLane);
+            s.SerializeValue(ref PhaseTime); s.SerializeValue(ref SignalSeconds); s.SerializeValue(ref ChangeSeconds);
+            s.SerializeValue(ref Age); s.SerializeValue(ref EscapeTime);
             s.SerializeValue(ref RouteDistance); s.SerializeValue(ref LaneOffset);
             s.SerializeValue(ref Id); s.SerializeValue(ref Health); s.SerializeValue(ref Kind);
             s.SerializeValue(ref X); s.SerializeValue(ref Z); s.SerializeValue(ref Speed); s.SerializeValue(ref Active);
         }
-        public bool Equals(RoadThreat o) => RouteDistance == o.RouteDistance && LaneOffset == o.LaneOffset && Id == o.Id && Health == o.Health && Kind == o.Kind &&
+        public bool Equals(RoadThreat o) => Phase == o.Phase && StartLane == o.StartLane && TargetLane == o.TargetLane && PhaseTime == o.PhaseTime && SignalSeconds == o.SignalSeconds && ChangeSeconds == o.ChangeSeconds && Age == o.Age && EscapeTime == o.EscapeTime && RouteDistance == o.RouteDistance && LaneOffset == o.LaneOffset && Id == o.Id && Health == o.Health && Kind == o.Kind &&
             X == o.X && Z == o.Z && Speed == o.Speed && Active == o.Active;
     }
 
@@ -90,6 +100,7 @@ namespace Getaway.Integration
         public static float RoadOffset(double distance, float ahead) => (float)(RoadCenter(distance + ahead) - RoadCenter(distance));
         public static RoadThreat PresentedThreat(RoadThreat threat, double distance)
         { threat.X += RoadOffset(distance, threat.Z); return threat; }
+        public static float NormalizeYaw(float yaw) => Mathf.Repeat(yaw + 180, 360) - 180;
         public static bool Finite(float value) => !float.IsNaN(value) && !float.IsInfinity(value);
         public static Vector3 Muzzle(float truckX, float roofX) => new Vector3(truckX + roofX, DeckHeight + WeaponHeight, RearShooterSpawn.z + .7f);
         public static Vector3 Direction(float yaw, float pitch) => Quaternion.Euler(pitch, yaw, 0) * Vector3.forward;

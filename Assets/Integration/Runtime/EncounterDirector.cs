@@ -4,7 +4,27 @@ namespace Getaway.Integration
 {
     public static class EncounterDirector
     {
-        public static int Count(RouteEncounter encounter, long circuit) => encounter.Kind == EncounterKind.Staggered && circuit > 0 ? 2 : 1;
+        public static int Count(RouteEncounter encounter, long circuit) => encounter.Kind == EncounterKind.Staggered ? 2 : 1;
+        public static RoadThreat Activate(RouteDefinition route, int seed, long circuit, int index, int part, double distance, float speed)
+        {
+            var e = route.Encounters[index]; var t = Threat(route, seed, circuit, index, part);
+            t.Speed = t.Kind == ThreatKind.Traffic ? Mathf.Clamp(speed * (e.SpeedFraction > 0 ? e.SpeedFraction : .65f), 14, 28) : 0;
+            if (e.Kind == EncounterKind.Staggered) { t.Kind = ThreatKind.Barricade; t.Speed = 0; }
+            float halfLength = (GetawayRules.TruckCollisionSize.z + GetawayRules.ThreatSize(t.Kind).z) * .5f;
+            t.RouteDistance = distance + EncounterMotion.Travel(speed, 6) - t.Speed * 6 + halfLength + 5 + part * speed * 6;
+            t.StartLane = t.TargetLane = t.LaneOffset;
+            if (e.Kind == EncounterKind.LaneChange)
+            {
+                int lane = Mathf.RoundToInt(t.LaneOffset / 5.2f);
+                t.TargetLane = (lane == 0 ? (Lane(seed, circuit, index + 31) < 0 ? -1 : 1) : 0) * 5.2f;
+                t.Phase = ThreatPhase.Signalling;
+                t.SignalSeconds = e.SignalSeconds > 0 ? e.SignalSeconds : EncounterMotion.SignalTime;
+                t.ChangeSeconds = e.ChangeSeconds > 0 ? e.ChangeSeconds : EncounterMotion.ChangeTime;
+            }
+            if (e.Kind == EncounterKind.Police)
+            { t.RouteDistance = distance - 60; t.Speed = Mathf.Min(34, speed); t.Health = 6; t.Phase = ThreatPhase.Approach; }
+            t.Z = (float)(t.RouteDistance - distance); return t;
+        }
         public static int Lane(int seed, long circuit, int index)
         {
             uint h = unchecked((uint)seed ^ (uint)circuit * 747796405u ^ (uint)index * 2891336453u);
@@ -15,7 +35,7 @@ namespace Getaway.Integration
             var encounter = route.Encounters[index]; int lane = Lane(seed, circuit, index);
             if (encounter.Kind == EncounterKind.Staggered) { lane = lane < 0 ? -1 : 1; if (part > 0) lane = -lane; }
             var kind = encounter.Kind == EncounterKind.Recovery ? ThreatKind.Repair : encounter.Kind == EncounterKind.Police ? ThreatKind.Police :
-                encounter.Kind == EncounterKind.Staggered ? ThreatKind.Traffic : ThreatKind.Barricade;
+                (encounter.Kind == EncounterKind.Staggered || encounter.Kind == EncounterKind.SlowTraffic || encounter.Kind == EncounterKind.LaneChange) ? ThreatKind.Traffic : ThreatKind.Barricade;
             return new RoadThreat { Active = true, Kind = kind, LaneOffset = lane * 5.2f,
                 RouteDistance = circuit * route.Length + encounter.Distance + part * 45,
                 Health = kind == ThreatKind.Police ? 3 : kind == ThreatKind.Traffic ? 2 : 1,

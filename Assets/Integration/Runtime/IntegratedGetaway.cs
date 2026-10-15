@@ -55,7 +55,7 @@ namespace Getaway.Integration
         void Approve(NetworkManager.ConnectionApprovalRequest request, NetworkManager.ConnectionApprovalResponse response)
         {
             bool lobby = IntegratedCrew.Session == null || IntegratedCrew.Session.State.Value.Phase == RoundPhase.Lobby;
-            bool compatible = System.Text.Encoding.UTF8.GetString(request.Payload ?? Array.Empty<byte>()) == "getaway-integration-v2";
+            bool compatible = System.Text.Encoding.UTF8.GetString(request.Payload ?? Array.Empty<byte>()) == "getaway-integration-v3";
             bool debug = soloRequested || (IntegratedCrew.Session != null && IntegratedCrew.Session.SoloDebug.Value);
             bool available = manager.ConnectedClients.Count + reservations.Count < 2 && lobby && compatible && (!debug || request.ClientNetworkId == NetworkManager.ServerClientId);
             response.Approved = available; response.CreatePlayerObject = available; response.Pending = false;
@@ -86,7 +86,7 @@ namespace Getaway.Integration
             if (transport == null) { status = "UnityTransport is missing."; return; }
             reservations.Clear(); connecting = true; connectDeadline = Time.unscaledTime + 12;
             status = host ? "Creating lobby…" : "Connecting…";
-            manager.NetworkConfig.ConnectionData = System.Text.Encoding.UTF8.GetBytes("getaway-integration-v2");
+            manager.NetworkConfig.ConnectionData = System.Text.Encoding.UTF8.GetBytes("getaway-integration-v3");
             transport.SetConnectionData(string.IsNullOrWhiteSpace(address) ? "127.0.0.1" : address.Trim(), 7777, "0.0.0.0");
             try
             {
