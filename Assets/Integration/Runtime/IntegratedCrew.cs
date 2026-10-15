@@ -26,6 +26,10 @@ namespace Getaway.Integration
             }
         }
         float policeAttackIn = 3;
+        readonly RoadThreat[] admission = new RoadThreat[GetawayRules.ThreatSlots + 2];
+        readonly RoadThreat[] wave = new RoadThreat[2];
+        readonly bool[] reachable = new bool[43], reachableNext = new bool[43];
+        float policeCooldownUntil, nextAdmission;
         float steer, walk, yaw, pitch = 4, lastInput = -100, nextShot, nextPacket, spawnIn, repairIn, nextSnapshot;
         bool fire;
         int nextThreat, nextEncounter;
@@ -208,7 +212,11 @@ namespace Getaway.Integration
                 var t = Threats[i]; if (!t.Active) continue;
                 var previousThreat = t;
                 float before = t.Z;
-                if (route != null) { t.RouteDistance += t.Speed * dt; t.Z = (float)(t.RouteDistance - simulation.Distance); }
+                if (route != null) {
+                    if (t.Phase == ThreatPhase.Signalling && t.PhaseTime + dt >= t.SignalSeconds
+                        && (route.NearBendBoundary(simulation.Distance) || route.NearBendBoundary(t.RouteDistance)))
+                    { t.Phase = ThreatPhase.Cruise; t.TargetLane = t.StartLane; }
+                    EncounterMotion.TrafficStep(ref t, dt); t.Z = (float)(t.RouteDistance - simulation.Distance); }
                 else t.Z += (t.Speed - simulation.Speed) * dt;
                 // Police gradually track the truck, leaving a visible, dodgeable approach.
                 if (t.Kind == ThreatKind.Police && t.Z > 12 && t.Z < 80)
@@ -240,26 +248,84 @@ namespace Getaway.Integration
         void SpawnScheduled(RouteDefinition route)
         {
             if (route.Encounters.Length == 0) return;
-            for (int attempt = 0; attempt < 3; attempt++)
+            if (simulation.Elapsed < nextAdmission) return;
+            nextAdmission = simulation.Elapsed + .5f;
+            var entry = route.Encounters[nextEncounter];
+            double anchor = encounterCircuit * route.Length + entry.Distance;
+            bool police = entry.Kind == EncounterKind.Police;
+            if (simulation.Distance < anchor - (police ? 0 : simulation.Speed * 6)) return;
+            double following = encounterCircuit * route.Length + (nextEncounter + 1 < route.Encounters.Length
+                ? route.Encounters[nextEncounter + 1].Distance : route.Length + route.Encounters[0].Distance);
+            double local = simulation.Distance - encounterCircuit * route.Length;
+            bool recovery = entry.Kind == EncounterKind.Recovery;
+            bool expired = simulation.Distance > System.Math.Min(anchor + 100, following - 55)
+                || (!recovery && local >= 1500);
+            if (!expired)
             {
-                var entry = route.Encounters[nextEncounter];
-                double remaining = encounterCircuit * route.Length + entry.Distance - simulation.Distance;
-                if (remaining > Mathf.Max(240, simulation.Speed * 6 + 40)) return;
-                bool recovery = entry.Kind == EncounterKind.Recovery;
-                bool tooLate = !recovery && remaining < simulation.Speed * 4 + 20;
-                if (!tooLate && !recovery && route.NearBendBoundary(simulation.Distance)) return;
-                int count = EncounterDirector.Count(entry, encounterCircuit), available = 0;
-                for (int i = 0; i < Threats.Count; i++) if (!Threats[i].Active) available++;
-                if (!tooLate && available >= count)
+                int active = 0, obstacles = 0, trafficAhead = 0; bool chasing = false;
+                for (int i = 0; i < Threats.Count; i++) if (Threats[i].Active)
+                {
+                    var t = Threats[i]; admission[obstacles++] = t; active++;
+                    chasing |= t.Kind == ThreatKind.Police;
+                    if (t.Kind == ThreatKind.Traffic && t.RouteDistance > simulation.Distance) trafficAhead++;
+                }
+                bool suppressed = !recovery && route.NearBendBoundary(simulation.Distance);
+                suppressed |= police && (chasing || simulation.Elapsed < policeCooldownUntil);
+                suppressed |= chasing && (entry.Kind == EncounterKind.Staggered || entry.Kind == EncounterKind.LaneChange
+                    || (entry.Kind == EncounterKind.SlowTraffic && trafficAhead >= 1) || entry.Kind == EncounterKind.BlockedLane);
+                int count = EncounterDirector.Count(entry, encounterCircuit);
+                if (!suppressed && active + count <= EncounterMotion.Budget(encounterCircuit))
+                {
                     for (int part = 0; part < count; part++)
-                        for (int i = 0; i < Threats.Count; i++) if (!Threats[i].Active)
-                        {
-                            var threat = EncounterDirector.Threat(route, simulation.RouteSeed, encounterCircuit, nextEncounter, part);
-                            threat.Id = ++nextThreat; threat.Z = (float)(threat.RouteDistance - simulation.Distance); Threats[i] = threat; break;
-                        }
-                nextEncounter++;
-                if (nextEncounter >= route.Encounters.Length) { nextEncounter = 0; encounterCircuit++; }
+                    {
+                        wave[part] = EncounterDirector.Activate(route, simulation.RouteSeed, encounterCircuit, nextEncounter, part,
+                            simulation.Distance, simulation.Speed, Mathf.Min(42, 22 + simulation.Elapsed * .065f + .39f));
+                        admission[obstacles + part] = wave[part];
+                    }
+                    bool reserved = true;
+                    // Reserve the entire lateral change corridor against other vehicles for its duration.
+                    if (entry.Kind == EncounterKind.LaneChange)
+                        for (int i = 0; i < obstacles; i++)
+                            if (admission[i].Kind != ThreatKind.Repair && admission[i].Kind != ThreatKind.Police
+                                && System.Math.Abs(admission[i].RouteDistance - wave[0].RouteDistance) < 60)
+                                reserved = false;
+                    if (entry.Kind == EncounterKind.LaneChange && (route.NearBendBoundary(simulation.Distance + EncounterMotion.Travel(simulation.Speed, wave[0].SignalSeconds))
+                        || route.NearBendBoundary(wave[0].RouteDistance + wave[0].Speed * wave[0].SignalSeconds))) reserved = false;
+                    if (!reserved) { wave[0].Phase = ThreatPhase.Cruise; wave[0].TargetLane = wave[0].StartLane; admission[obstacles] = wave[0]; }
+                    // A staggered wave must finish before the recovery stretch or following encounter.
+                    bool fits = entry.Kind != EncounterKind.Staggered || wave[count - 1].RouteDistance + 10 <
+                        System.Math.Min(encounterCircuit * route.Length + 1500, following - 25);
+                    bool safe = recovery || police || (fits && EncounterMotion.SafeWave(route, simulation.Distance,
+                        simulation.TruckX, simulation.Speed, admission, obstacles + count, 18, reachable, reachableNext));
+                    if (safe && entry.Kind == EncounterKind.LaneChange && wave[0].Phase == ThreatPhase.Signalling)
+                    {
+                        var planned = admission[obstacles]; admission[obstacles].Phase = ThreatPhase.Cruise;
+                        bool stationaryLaneSafe = EncounterMotion.SafeWave(route, simulation.Distance, simulation.TruckX, simulation.Speed,
+                            admission, obstacles + count, 18, reachable, reachableNext);
+                        admission[obstacles] = planned; safe = stationaryLaneSafe;
+                    }
+                    if (!safe && entry.Kind == EncounterKind.LaneChange)
+                    {
+                        wave[0].Phase = ThreatPhase.Cruise; wave[0].TargetLane = wave[0].StartLane; admission[obstacles] = wave[0];
+                        safe = EncounterMotion.SafeWave(route, simulation.Distance, simulation.TruckX, simulation.Speed,
+                            admission, obstacles + count, 18, reachable, reachableNext);
+                    }
+                    if (safe)
+                    {
+                        for (int part = 0; part < count; part++)
+                            for (int i = 0; i < Threats.Count; i++) if (!Threats[i].Active)
+                            { var t = wave[part]; t.Id = ++nextThreat; Threats[i] = t; break; }
+                        AdvanceEncounter(route); return;
+                    }
+                }
+                return; // Retry until this anchor expires, never force an unsafe wave.
             }
+            AdvanceEncounter(route);
+        }
+        void AdvanceEncounter(RouteDefinition route)
+        {
+            nextEncounter++;
+            if (nextEncounter >= route.Encounters.Length) { nextEncounter = 0; encounterCircuit++; }
         }
         void Spawn(bool repair)
         {

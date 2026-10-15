@@ -6,10 +6,12 @@ namespace Getaway.Integration
     {
         public const float SignalTime = 2, ChangeTime = 3;
         public static int Budget(long circuit) => circuit == 0 ? 4 : circuit == 1 ? 6 : 8;
-        public static float Travel(float speed, float seconds)
+        public static float Travel(float speed, float seconds, float ceiling = 42, float acceleration = 5)
         {
-            float accelerating = Mathf.Min(seconds, Mathf.Max(0, (42 - speed) / 5));
-            return speed * accelerating + 2.5f * accelerating * accelerating + 42 * (seconds - accelerating);
+            if (acceleration <= 0) return speed * seconds;
+            ceiling = Mathf.Max(speed, ceiling);
+            float accelerating = Mathf.Min(seconds, Mathf.Max(0, (ceiling - speed) / acceleration));
+            return speed * accelerating + .5f * acceleration * accelerating * accelerating + ceiling * (seconds - accelerating);
         }
         public static RoadThreat Predict(RoadThreat t, float seconds)
         {
@@ -51,15 +53,22 @@ namespace Getaway.Integration
         public static bool SafeWave(RouteDefinition route, double distance, float truckX, float speed,
             RoadThreat[] obstacles, int count, float horizon, bool[] previous, bool[] next)
         {
+            return SafeProfile(route, distance, truckX, speed, obstacles, count, horizon, previous, next, 0)
+                && SafeProfile(route, distance, truckX, speed, obstacles, count, horizon, previous, next, .065f)
+                && SafeProfile(route, distance, truckX, speed, obstacles, count, horizon, previous, next, 5);
+        }
+        static bool SafeProfile(RouteDefinition route, double distance, float truckX, float speed,
+            RoadThreat[] obstacles, int count, float horizon, bool[] previous, bool[] next, float acceleration)
+        {
             const float step = .2f, spacing = .25f; const int cells = 43; const float left = -5.25f;
             System.Array.Clear(previous, 0, cells);
             int start = Mathf.Clamp(Mathf.RoundToInt((truckX - left) / spacing), 0, cells - 1); previous[start] = true;
             for (int tick = 1; tick <= Mathf.CeilToInt(horizon / step); tick++)
             {
                 float time = tick * step, before = (tick - 1) * step;
-                double d = distance + Travel(speed, time), oldD = distance + Travel(speed, before);
+                double d = distance + Travel(speed, time, 42, acceleration), oldD = distance + Travel(speed, before, 42, acceleration);
                 float limit = RouteGeometry.TruckLateralLimit(route, d) - .1f;
-                float drift = Mathf.Abs(RouteGeometry.CurveDrift(route, d, Mathf.Min(42, speed + 5 * time)));
+                float drift = Mathf.Abs(RouteGeometry.CurveDrift(route, d, Mathf.Min(42, speed + acceleration * time)));
                 float reach = time < .4f ? 0 : Mathf.Max(0, 8 - drift) * step;
                 System.Array.Clear(next, 0, cells); bool any = false;
                 for (int to = 0; to < cells; to++)
@@ -79,7 +88,7 @@ namespace Getaway.Integration
                             double z = b.RouteDistance - d;
                             float halfLength = (GetawayRules.TruckCollisionSize.z + GetawayRules.ThreatSize(obstacle.Kind).z) * .5f + 1;
                             if (System.Math.Abs(z - GetawayRules.TruckCollisionCenter.z) < halfLength && Mathf.Abs(x - b.LaneOffset) < forbidden) clear = false;
-                            else if (RouteGeometry.CrossesTruck(route, a, b, oldD, d, left + from * spacing, x)) clear = false;
+                            else if (System.Math.Abs(z) < halfLength + (d - oldD) + 12 && RouteGeometry.CrossesTruck(route, a, b, oldD, d, left + from * spacing, x)) clear = false;
                         }
                         if (clear) { next[to] = true; any = true; break; }
                     }

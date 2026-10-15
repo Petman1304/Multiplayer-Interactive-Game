@@ -5,13 +5,13 @@ namespace Getaway.Integration
     public static class EncounterDirector
     {
         public static int Count(RouteEncounter encounter, long circuit) => encounter.Kind == EncounterKind.Staggered ? 2 : 1;
-        public static RoadThreat Activate(RouteDefinition route, int seed, long circuit, int index, int part, double distance, float speed)
+        public static RoadThreat Activate(RouteDefinition route, int seed, long circuit, int index, int part, double distance, float speed, float cruiseSpeed = 0)
         {
             var e = route.Encounters[index]; var t = Threat(route, seed, circuit, index, part);
             t.Speed = t.Kind == ThreatKind.Traffic ? Mathf.Clamp(speed * (e.SpeedFraction > 0 ? e.SpeedFraction : .65f), 14, 28) : 0;
             if (e.Kind == EncounterKind.Staggered) { t.Kind = ThreatKind.Barricade; t.Speed = 0; }
             float halfLength = (GetawayRules.TruckCollisionSize.z + GetawayRules.ThreatSize(t.Kind).z) * .5f;
-            t.RouteDistance = distance + EncounterMotion.Travel(speed, 6) - t.Speed * 6 + halfLength + 5 + part * speed * 6;
+            t.RouteDistance = distance + EncounterMotion.Travel(speed, 6, cruiseSpeed > 0 ? cruiseSpeed : speed + .39f) - t.Speed * 6 + halfLength + 5 + part * speed * 6;
             t.StartLane = t.TargetLane = t.LaneOffset;
             if (e.Kind == EncounterKind.LaneChange)
             {
