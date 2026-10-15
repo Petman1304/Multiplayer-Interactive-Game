@@ -15,7 +15,12 @@ namespace Getaway.Integration
         Mesh weaponMesh, flashMesh;
         Material[] palette;
         Material flashMaterial;
-        float recoil, flashTime, lastYaw, lastPitch;
+        float recoil, flashTime, lastYaw, lastPitch, aimBlend;
+        Vector3 hipPosition;
+        Quaternion hipRotation=Quaternion.identity;
+        public static readonly Vector3 RearSightLocal=new Vector3(0,.114f,.07f), FrontSightLocal=new Vector3(0,.114f,.61f);
+        public Vector3 RearSightPosition=>model.TransformPoint(RearSightLocal);
+        public Vector3 FrontSightPosition=>model.TransformPoint(FrontSightLocal);
         bool posed;
         readonly List<Mesh> temporaryMeshes = new();
         static void Release(Object item) { if(item==null)return; if(Application.isPlaying)Destroy(item);else DestroyImmediate(item); }
@@ -83,18 +88,28 @@ namespace Getaway.Integration
             WorldMuzzle=new GameObject("World muzzle").transform;WorldMuzzle.SetParent(WorldWeapon,false);WorldMuzzle.localPosition=new Vector3(0,.025f,.74f);
         }
         public void Fire(){recoil=Mathf.Min(1,recoil+.8f);flashTime=.045f;}
-        public void Pose(bool visible,bool aiming,float reload,float yaw,float pitch,float dt)
+        public void Pose(bool visible,bool aiming,float reload,float yaw,float pitch,float dt,Vector3 aimPointLocal=default)
         {
             Initialize();bool snap=!posed || (visible && !Visible);Visible=visible;model.gameObject.SetActive(visible);
             if(!posed || !visible){lastYaw=yaw;lastPitch=pitch;posed=true;}
             recoil=Mathf.MoveTowards(recoil,0,dt*7);flashTime=Mathf.Max(0,flashTime-dt);
             float dx=Mathf.Clamp(Mathf.DeltaAngle(lastYaw,yaw),-8,8),dy=Mathf.Clamp(pitch-lastPitch,-8,8);lastYaw=yaw;lastPitch=pitch;
-            var rest=aiming?new Vector3(0,-.11f,.46f):new Vector3(.22f,-.25f,.42f);
-            rest+=new Vector3(-dx*.0015f,dy*.0015f,-recoil*.045f);
+            var rest=new Vector3(.22f,-.25f,.42f)+new Vector3(-dx*.0015f,dy*.0015f,-recoil*.045f);
             if(reload>0)rest+=new Vector3(.04f,-.10f,0);
-            model.localPosition=snap?rest:Vector3.Lerp(model.localPosition,rest,1-Mathf.Exp(-18*dt));
-            var rotation=Quaternion.Euler(-recoil*4+dy*.12f,reload>0?12:0,reload>0?-24:-dx*.12f);
-            model.localRotation=snap?rotation:Quaternion.Slerp(model.localRotation,rotation,1-Mathf.Exp(-22*dt));
+            var hipTarget=Quaternion.Euler(-recoil*4+dy*.12f,reload>0?12:0,reload>0?-24:-dx*.12f);
+            hipPosition=snap?rest:Vector3.Lerp(hipPosition,rest,1-Mathf.Exp(-18*dt));
+            hipRotation=snap?hipTarget:Quaternion.Slerp(hipRotation,hipTarget,1-Mathf.Exp(-22*dt));
+            bool aligned=aiming && reload<=0;
+            aimBlend=snap?(aligned?1:0):Mathf.MoveTowards(aimBlend,aligned?1:0,dt*6);
+            if(aimPointLocal.z<.1f)aimPointLocal=Vector3.forward*190;
+            var sightDirection=aimPointLocal.normalized;
+            var sightRotation=Quaternion.LookRotation(sightDirection,Vector3.up);
+            // Both sight references lie on the camera-to-reticle ray. Axial recoil preserves
+            // this alignment; cosmetic hip-fire sway must not redirect the aimed sights.
+            var sightPosition=sightDirection*(.53f-recoil*.045f)-sightRotation*RearSightLocal;
+            float blend=aimBlend*aimBlend*(3-2*aimBlend);
+            model.localPosition=Vector3.Lerp(hipPosition,sightPosition,blend);
+            model.localRotation=Quaternion.Slerp(hipRotation,sightRotation,blend);
             flash.gameObject.SetActive(visible && flashTime>0);flash.localScale=Vector3.one*(.7f+flashTime*8);
         }
         void OnDestroy()

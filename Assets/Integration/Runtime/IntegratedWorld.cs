@@ -13,6 +13,7 @@ namespace Getaway.Integration
         public bool UseDowntownRoute;
         public static IntegratedWorld Instance { get; private set; }
         public Camera View { get; private set; }
+        public Vector3 AimPoint { get; private set; }
         [Tooltip("First-person seat position, in integration world units relative to the truck.")]
         public Vector3 DriverEye = new Vector3(1.02f, 2.48f, 1.89f);
         public Vector3 ShooterEye = new Vector3(0, GetawayRules.ShooterEyeHeight, .1f);
@@ -48,7 +49,6 @@ namespace Getaway.Integration
         float renderedTruckX;
         readonly double[] renderedThreatDistances = new double[GetawayRules.ThreatSlots];
         readonly float[] renderedThreatLanes = new float[GetawayRules.ThreatSlots];
-        GUIStyle reticle;
         IntegratedInput input;
         AudioSource audioSource;
         AudioClip shotSound, impactSound, sirenSound;
@@ -412,7 +412,8 @@ namespace Getaway.Integration
             }
             foreach (var renderer in shooterRenderers)
                 renderer.forceRenderingOff = (live && !driverView) || renderer.transform.IsChildOf(gun);
-            weaponView.Pose(live && !driverView,state.Phase==RoundPhase.Playing && aim,state.ReloadTime,input!=null?input.AimYaw:0,input!=null?input.AimPitch:4,Time.deltaTime);
+            AimPoint=live && !driverView?ResolveAimPoint():View.transform.position+View.transform.forward*190;
+            weaponView.Pose(live && !driverView,state.Phase==RoundPhase.Playing && aim,state.ReloadTime,input!=null?input.AimYaw:0,input!=null?input.AimPitch:4,Time.deltaTime,View.transform.InverseTransformPoint(AimPoint));
             weaponView.WorldWeapon.gameObject.SetActive(!live || driverView);
             weaponView.WorldWeapon.localRotation=Quaternion.Euler(state.Pitch,0,0);
             if (state.Hull < lastHull) { damageUntil = Time.unscaledTime + .5f; audioSource.PlayOneShot(impactSound); }
@@ -462,30 +463,43 @@ namespace Getaway.Integration
             audioSource.PlayOneShot(shotSound);
             if (hit) hitUntil = Time.unscaledTime + .16f;
         }
-        void OnGUI()
+        Vector3 ResolveAimPoint()
         {
-            if (input == null || input.ViewingDriver || IntegratedCrew.Local == null ||
-                IntegratedCrew.Session == null || IntegratedCrew.Session.State.Value.Phase != RoundPhase.Playing) return;
-            reticle ??= new GUIStyle(GUI.skin.label) { fontSize = 27, alignment = TextAnchor.MiddleCenter };
+            if(input==null)return View.transform.position+View.transform.forward*190;
+            var session=IntegratedCrew.Session;
             Ray aimRay = new Ray(MuzzlePosition, truck.rotation * GetawayRules.Direction(input.AimYaw, input.AimPitch));
             float range = 190;
             if (new Plane(Vector3.up, new Vector3(0, 1.1f, 0)).Raycast(aimRay, out float ground)) range = Mathf.Min(range, ground);
-            for (int i = 0; i < IntegratedCrew.Session.Threats.Count; i++)
+            for (int i = 0; i < (session!=null?session.Threats.Count:0); i++)
             {
-                var threat = IntegratedCrew.Session.Threats[i];
+                var threat = session.Threats[i];
                 if (GetawayRules.Route != null) { threat.RouteDistance = renderedThreatDistances[i]; threat.LaneOffset = renderedThreatLanes[i]; }
                 if (threat.Active && threat.Kind != ThreatKind.Repair)
                 {
                     float hit; var route = GetawayRules.Route;
-                    bool intersects = route != null ? RouteGeometry.Raycast(route, threat, renderedDistance, aimRay, out hit) : GetawayRules.ThreatBounds(GetawayRules.PresentedThreat(threat, IntegratedCrew.Session.State.Value.Distance)).IntersectRay(aimRay, out hit);
+                    bool intersects = route != null ? RouteGeometry.Raycast(route, threat, renderedDistance, aimRay, out hit) : GetawayRules.ThreatBounds(GetawayRules.PresentedThreat(threat, session.State.Value.Distance)).IntersectRay(aimRay, out hit);
                     if (intersects && hit > 0) range = Mathf.Min(range, hit);
                 }
             }
-            Vector3 point = View.WorldToScreenPoint(aimRay.GetPoint(range));
+            return aimRay.GetPoint(range);
+        }
+        void OnGUI()
+        {
+            if (input == null || input.ViewingDriver || IntegratedCrew.Local == null ||
+                IntegratedCrew.Session == null || IntegratedCrew.Session.State.Value.Phase != RoundPhase.Playing) return;
+            Vector3 point = View.WorldToScreenPoint(AimPoint);
             if (point.z <= 0) return;
-            GUI.color = HitFeedback > 0 ? new Color(1, .65f, .2f) : Color.white;
-            GUI.Label(new Rect(point.x - 18, Screen.height - point.y - 18, 36, 36), HitFeedback > 0 ? "×" : "+", reticle);
-            GUI.color = Color.white;
+            var previousColor=GUI.color;var previousMatrix=GUI.matrix;
+            var centre=new Vector2(point.x,Screen.height-point.y);
+            GUI.color=HitFeedback>0?new Color(1,.65f,.2f):Color.white;
+            if(HitFeedback>0)GUIUtility.RotateAroundPivot(45,centre);
+            // Symmetric strokes have no font bearing/padding offset from the aim point.
+            const float gap=3,length=5,width=1.5f;
+            GUI.DrawTexture(new Rect(centre.x-gap-length,centre.y-width*.5f,length,width),Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(centre.x+gap,centre.y-width*.5f,length,width),Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(centre.x-width*.5f,centre.y-gap-length,width,length),Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(centre.x-width*.5f,centre.y+gap,width,length),Texture2D.whiteTexture);
+            GUI.matrix=previousMatrix;GUI.color=previousColor;
         }
         void OnDestroy()
         {
