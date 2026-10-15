@@ -43,14 +43,15 @@ public static class DowntownPreview
                 var copy = new GameObject(renderer.name, typeof(MeshFilter), typeof(MeshRenderer)); copy.transform.SetParent(truck, false);
                 copy.transform.localPosition = renderer.transform.position * .4f; copy.transform.localRotation = renderer.transform.rotation; copy.transform.localScale = renderer.transform.lossyScale * .4f;
                 copy.GetComponent<MeshFilter>().sharedMesh = mesh; var materials = renderer.sharedMaterials;
+                bool glazing = renderer.name == "Plano" || renderer.name == "Plano.001";
                 for (int i = 0; i < materials.Length; i++)
                 {
-                    if (!materialCache.TryGetValue((materials[i], renderer.name == "Plano"), out var material))
-                    { material = (Material)materialFactory.Invoke(null, new object[] { materials[i], renderer.name == "Plano" }); materialCache.Add((materials[i], renderer.name == "Plano"), material); temporaryMaterials.Add(material); }
+                    if (!materialCache.TryGetValue((materials[i], glazing), out var material))
+                    { material = (Material)materialFactory.Invoke(null, new object[] { materials[i], glazing }); materialCache.Add((materials[i], glazing), material); temporaryMaterials.Add(material); }
                     materials[i] = material;
                 }
                 copy.GetComponent<MeshRenderer>().sharedMaterials = materials;
-                if (renderer.name == "Plano") copy.GetComponent<MeshRenderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                if (glazing) copy.GetComponent<MeshRenderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             }
             var pose = route.Sample(distance); truck.rotation = pose.Rotation;
             var cameraObject = new GameObject("Player perspective", typeof(Camera)); cameraObject.transform.SetParent(root.transform, false);

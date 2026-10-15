@@ -115,3 +115,14 @@ when intentionally building and sufficient memory is available.
 Development builds retain explicitly requested `--getaway-smoke=host`,
 `--getaway-smoke=client`, and `--getaway-smoke=third` automation. The runner now
 uses route-aware aiming and steering but has not been executed for this milestone.
+
+## Truck window visibility in builds
+
+Both `Truck ver 1/Plano` (windshield) and `Plano.001` (side/rear glazing)
+reference the integration's `TruckClearGlass.mat` in `TruckPrefab.prefab`.
+The prefab reference includes the transparent shader variant in player builds;
+runtime material clones preserve the same transparent configuration on both meshes.
+Opaque doors, roof, pillars and dashboard retain their body materials. Rebuild both
+clients after updating; an already-built executable does not pick up asset changes.
+Front/side visibility was checked in an edit-mode preview. Linux player verification
+remains manual; no build or Play session was launched for this correction.

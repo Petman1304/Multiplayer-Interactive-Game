@@ -142,8 +142,9 @@ namespace Getaway.Integration
                     copy.sharedMaterials = renderer.sharedMaterials;
                     if (bodyPart || cockpitPart)
                     {
-                        // Plano is the curved windscreen in Truck ver 1, not the cab shell.
-                        bool windscreen = renderer.name == "Plano";
+                        // Plano is the windshield; Plano.001 contains the side/rear glazing.
+                        // Keep both separate from opaque cab panels.
+                        bool windscreen = renderer.name == "Plano" || renderer.name == "Plano.001";
                         var materialCache = windscreen ? truckGlassMaterials : insideTruckMaterials;
                         var twoSided = copy.sharedMaterials;
                         for (int materialIndex = 0; materialIndex < twoSided.Length; materialIndex++)
@@ -216,7 +217,7 @@ namespace Getaway.Integration
         }
         static Material CreateTruckMaterial(Material original, bool windscreen)
         {
-            var result = new Material(original) { name = original.name + (windscreen ? " (clear windshield)" : " (truck interior visible)"), doubleSidedGI = true };
+            var result = new Material(original) { name = original.name + (windscreen ? " (clear truck glass)" : " (truck interior visible)"), doubleSidedGI = true };
             if (result.HasProperty("_Cull")) result.SetFloat("_Cull", 0);
             if (result.HasProperty("_CullMode")) result.SetFloat("_CullMode", 0);
             if (!windscreen) return result;
