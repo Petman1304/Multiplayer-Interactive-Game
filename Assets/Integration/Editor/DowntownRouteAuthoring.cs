@@ -47,6 +47,14 @@ public static class DowntownRouteAuthoring
             distance += length;
         }
         route.Curves = curves.ToArray(); route.Sections = sections.ToArray(); Bake(route);
+        route.Encounters = new[] {
+            new RouteEncounter { Distance = 200, Kind = EncounterKind.BlockedLane },
+            new RouteEncounter { Distance = 430, Kind = EncounterKind.BlockedLane },
+            new RouteEncounter { Distance = 690, Kind = EncounterKind.Staggered },
+            new RouteEncounter { Distance = 900, Kind = EncounterKind.Recovery },
+            new RouteEncounter { Distance = 980, Kind = EncounterKind.Police },
+            new RouteEncounter { Distance = 1190, Kind = EncounterKind.Staggered },
+            new RouteEncounter { Distance = 1700, Kind = EncounterKind.Recovery } };
         EditorUtility.SetDirty(route); AssetDatabase.SaveAssets(); return route;
     }
     public static void Bake(RouteDefinition route)

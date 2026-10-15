@@ -779,7 +779,28 @@ MonoBehaviour:
   - Start: 1700.0029807993108
     Length: 100.00017534113593
     Kind: 0
-  Encounters: []
+  Encounters:
+  - Distance: 200
+    Kind: 0
+    Lane: 0
+  - Distance: 430
+    Kind: 0
+    Lane: 0
+  - Distance: 690
+    Kind: 1
+    Lane: 0
+  - Distance: 900
+    Kind: 3
+    Lane: 0
+  - Distance: 980
+    Kind: 2
+    Lane: 0
+  - Distance: 1190
+    Kind: 1
+    Lane: 0
+  - Distance: 1700
+    Kind: 3
+    Lane: 0
   Points:
   - Distance: 0
     X: 0

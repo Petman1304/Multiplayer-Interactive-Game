@@ -28,7 +28,8 @@ namespace Getaway.Integration
         float policeAttackIn = 3;
         float steer, walk, yaw, pitch = 4, lastInput = -100, nextShot, nextPacket, spawnIn, repairIn, nextSnapshot;
         bool fire;
-        int nextThreat;
+        int nextThreat, nextEncounter;
+        long encounterCircuit;
         System.Random random;
         RoundState simulation;
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -86,7 +87,7 @@ namespace Getaway.Integration
             simulation = new RoundState { Phase = RoundPhase.Countdown, Hull = GetawayRules.MaxHull, Countdown = 3, Round = round, RouteSeed = round * 7919, Pitch = 4, Balance = 100, Ammo = GetawayRules.Magazine, Reserve = 72 };
             random = new System.Random(round * 7919);
             policeAttackIn = 3;
-            spawnIn = 1.5f; repairIn = 18; nextThreat = 0;
+            spawnIn = 1.5f; repairIn = 18; nextThreat = 0; nextEncounter = 0; encounterCircuit = 0;
             foreach (var m in Members) { m.fire = false; m.steer = m.walk = m.yaw = 0; m.pitch = 4; m.lastInput = -100; m.nextShot = 0; }
             for (int i = 0; i < Threats.Count; i++) Threats[i] = default;
             State.Value = simulation;
@@ -195,8 +196,12 @@ namespace Getaway.Integration
 
             simulation.Invulnerability = Mathf.Max(0, simulation.Invulnerability - dt);
             spawnIn -= dt; repairIn -= dt;
-            if (spawnIn <= 0) { Spawn(false); spawnIn = Mathf.Max(.95f, 2.4f - simulation.Elapsed * .006f); }
-            if (repairIn <= 0) { Spawn(true); repairIn = 20; }
+            if (route != null) SpawnScheduled(route);
+            else
+            {
+                if (spawnIn <= 0) { Spawn(false); spawnIn = Mathf.Max(.95f, 2.4f - simulation.Elapsed * .006f); }
+                if (repairIn <= 0) { Spawn(true); repairIn = 20; }
+            }
             for (int i = 0; i < Threats.Count; i++)
             {
                 var t = Threats[i]; if (!t.Active) continue;
@@ -230,6 +235,30 @@ namespace Getaway.Integration
             if (simulation.Phase == RoundPhase.Playing && simulation.Pursuit >= 100) Defeat(DefeatReason.Captured);
             if (simulation.Phase == RoundPhase.Playing && shooterFresh && shooter.fire && Time.unscaledTime >= shooter.nextShot)
             { shooter.nextShot = Time.unscaledTime + GetawayRules.FireInterval; Shoot(); }
+        }
+        void SpawnScheduled(RouteDefinition route)
+        {
+            if (route.Encounters.Length == 0) return;
+            for (int attempt = 0; attempt < 3; attempt++)
+            {
+                var entry = route.Encounters[nextEncounter];
+                double remaining = encounterCircuit * route.Length + entry.Distance - simulation.Distance;
+                if (remaining > Mathf.Max(240, simulation.Speed * 6 + 40)) return;
+                bool recovery = entry.Kind == EncounterKind.Recovery;
+                bool tooLate = !recovery && remaining < simulation.Speed * 4 + 20;
+                if (!tooLate && !recovery && route.NearBendBoundary(simulation.Distance)) return;
+                int count = EncounterDirector.Count(entry, encounterCircuit), available = 0;
+                for (int i = 0; i < Threats.Count; i++) if (!Threats[i].Active) available++;
+                if (!tooLate && available >= count)
+                    for (int part = 0; part < count; part++)
+                        for (int i = 0; i < Threats.Count; i++) if (!Threats[i].Active)
+                        {
+                            var threat = EncounterDirector.Threat(route, simulation.RouteSeed, encounterCircuit, nextEncounter, part);
+                            threat.Id = ++nextThreat; threat.Z = (float)(threat.RouteDistance - simulation.Distance); Threats[i] = threat; break;
+                        }
+                nextEncounter++;
+                if (nextEncounter >= route.Encounters.Length) { nextEncounter = 0; encounterCircuit++; }
+            }
         }
         void Spawn(bool repair)
         {
