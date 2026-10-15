@@ -57,44 +57,68 @@ namespace Getaway.Integration
                 && SafeProfile(route, distance, truckX, speed, obstacles, count, horizon, previous, next, .065f)
                 && SafeProfile(route, distance, truckX, speed, obstacles, count, horizon, previous, next, 5);
         }
+        // Bounds are projected into the current route frame. Unioned endpoint boxes
+        // conservatively cover each steering edge and threat sweep; the gameplay collision
+        // system still uses its finer route-oriented SAT substeps.
+        static Bounds LocalBox(RoutePoint pose, RoutePoint origin, float lane, Vector3 size, Vector3 center)
+        {
+            var relative = pose.RelativeTo(origin, lane);
+            float c = Mathf.Cos(origin.Heading), sn = Mathf.Sin(origin.Heading);
+            float angle = pose.Heading - origin.Heading, ca = Mathf.Cos(angle), sa = Mathf.Sin(angle);
+            var position = new Vector3(relative.x*c-relative.z*sn + ca*center.x+sa*center.z, 0,
+                relative.x*sn+relative.z*c - sa*center.x+ca*center.z);
+            return new Bounds(position, new Vector3(Mathf.Abs(ca)*size.x+Mathf.Abs(sa)*size.z, 2,
+                Mathf.Abs(sa)*size.x+Mathf.Abs(ca)*size.z));
+        }
         static bool SafeProfile(RouteDefinition route, double distance, float truckX, float speed,
             RoadThreat[] obstacles, int count, float horizon, bool[] previous, bool[] next, float acceleration)
         {
-            const float step = .2f, spacing = .25f; const int cells = 43; const float left = -5.25f;
+            const float step = .2f, spacing = 5.18f / 21; const int cells = 43; const float left = -5.18f;
+            System.Span<Bounds> threats = stackalloc Bounds[20];
+            System.Span<Bounds> oldTruck = stackalloc Bounds[cells];
+            System.Span<Bounds> newTruck = stackalloc Bounds[cells];
             System.Array.Clear(previous, 0, cells);
             int start = Mathf.Clamp(Mathf.RoundToInt((truckX - left) / spacing), 0, cells - 1); previous[start] = true;
             for (int tick = 1; tick <= Mathf.CeilToInt(horizon / step); tick++)
             {
                 float time = tick * step, before = (tick - 1) * step;
                 double d = distance + Travel(speed, time, 42, acceleration), oldD = distance + Travel(speed, before, 42, acceleration);
+                var origin = route.Sample(d); var oldPose = route.Sample(oldD);
                 float limit = RouteGeometry.TruckLateralLimit(route, d) - .1f;
                 float drift = Mathf.Abs(RouteGeometry.CurveDrift(route, d, Mathf.Min(42, speed + acceleration * time)));
                 float reach = time < .4f ? 0 : Mathf.Max(0, 8 - drift) * step;
-                System.Array.Clear(next, 0, cells); bool any = false;
-                for (int to = 0; to < cells; to++)
+                int occupied = 0;
+                for (int i=0;i<count;i++)
                 {
-                    float x = left + to * spacing; if (Mathf.Abs(x) > limit) continue;
-                    for (int from = 0; from < cells; from++)
+                    var obstacle=obstacles[i];
+                    if (!obstacle.Active || obstacle.Kind==ThreatKind.Repair || obstacle.Kind==ThreatKind.Police) continue;
+                    var a=Predict(obstacle,before);var b=Predict(obstacle,time);
+                    if (System.Math.Abs(b.RouteDistance-d)>30 && System.Math.Abs(a.RouteDistance-oldD)>30) continue;
+                    var box=LocalBox(route.Sample(a.RouteDistance),origin,a.LaneOffset,GetawayRules.ThreatSize(a.Kind),Vector3.zero);
+                    box.Encapsulate(LocalBox(route.Sample(b.RouteDistance),origin,b.LaneOffset,GetawayRules.ThreatSize(b.Kind),Vector3.zero));
+                    box.Expand(new Vector3(.7f,0,.2f)); threats[occupied++]=box;
+                }
+                for(int cell=0;cell<cells;cell++)
+                {
+                    float x=left+cell*spacing;
+                    oldTruck[cell]=LocalBox(oldPose,origin,x,GetawayRules.TruckCollisionSize,GetawayRules.TruckCollisionCenter);
+                    newTruck[cell]=new Bounds(new Vector3(x+GetawayRules.TruckCollisionCenter.x,0,GetawayRules.TruckCollisionCenter.z),new Vector3(GetawayRules.TruckCollisionSize.x,2,GetawayRules.TruckCollisionSize.z));
+                }
+                System.Array.Clear(next,0,cells); bool any=false;
+                int radius=Mathf.FloorToInt(reach/spacing);
+                for(int to=0;to<cells;to++)
+                {
+                    if(Mathf.Abs(left+to*spacing)>limit)continue;
+                    for(int from=Mathf.Max(0,to-radius);from<=Mathf.Min(cells-1,to+radius);from++)
                     {
-                        if (!previous[from] || Mathf.Abs(to - from) * spacing > reach + .0001f) continue;
-                        bool clear = true;
-                        for (int i = 0; i < count && clear; i++)
-                        {
-                            var obstacle = obstacles[i];
-                            if (!obstacle.Active || obstacle.Kind == ThreatKind.Repair || obstacle.Kind == ThreatKind.Police) continue;
-                            var a = Predict(obstacle, before); var b = Predict(obstacle, time);
-                            // Inflate lateral footprint for quantization and steering uncertainty.
-                            float forbidden = (GetawayRules.TruckCollisionSize.x + GetawayRules.ThreatSize(obstacle.Kind).x) * .5f + .35f;
-                            double z = b.RouteDistance - d;
-                            float halfLength = (GetawayRules.TruckCollisionSize.z + GetawayRules.ThreatSize(obstacle.Kind).z) * .5f + 1;
-                            if (System.Math.Abs(z - GetawayRules.TruckCollisionCenter.z) < halfLength && Mathf.Abs(x - b.LaneOffset) < forbidden) clear = false;
-                            else if (System.Math.Abs(z) < halfLength + (d - oldD) + 12 && RouteGeometry.CrossesTruck(route, a, b, oldD, d, left + from * spacing, x)) clear = false;
-                        }
-                        if (clear) { next[to] = true; any = true; break; }
+                        if(!previous[from])continue;
+                        var swept=oldTruck[from];swept.Encapsulate(newTruck[to]);swept.Expand(.1f);
+                        bool clear=true;for(int i=0;i<occupied;i++)if(swept.Intersects(threats[i])){clear=false;break;}
+                        if(clear){next[to]=true;any=true;break;}
                     }
                 }
-                if (!any) return false;
-                var swap = previous; previous = next; next = swap;
+                if(!any)return false;
+                var swap=previous;previous=next;next=swap;
             }
             return true;
         }

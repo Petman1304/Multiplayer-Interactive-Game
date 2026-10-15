@@ -319,6 +319,7 @@ namespace Getaway.Integration
             if (truck == null) return;
             var session = IntegratedCrew.Session;
             RoundState state = session != null ? session.State.Value : new RoundState { Hull = GetawayRules.MaxHull };
+            if (state.Round != lastRound) heardPoliceEventUntil = -1;
             if (state.PoliceEvent == PursuitEvent.Approaching && state.PoliceEventUntil > state.Elapsed && state.PoliceEventUntil != heardPoliceEventUntil)
             { heardPoliceEventUntil = state.PoliceEventUntil; audioSource.PlayOneShot(sirenSound, .5f); }
             bool snap = state.Round != lastRound || state.Phase == RoundPhase.Lobby;
