@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a2758fd38528d180cbd0154441c823a8, type: 3}
+  m_Name: DowntownEnvironment
+  m_EditorClassIdentifier: Assembly-CSharp::Getaway.Integration.DowntownEnvironmentDefinition
+  Modules:
+  - {fileID: 3212370294221102249, guid: ba23054d1544e3c26a6ae51fb7f219ad, type: 3}
+  - {fileID: 846967619987536115, guid: 6a2da272fad3a5d4e9fd9deca1c11c28, type: 3}
+  - {fileID: 5447077612073938987, guid: 257256f9cecdaa11e827cb43464206f8, type: 3}
+  - {fileID: 7470018751539160816, guid: 00c511921de3ada8295502f262454d89, type: 3}
+  - {fileID: 8944904493296845330, guid: b2bf49e52b9cef7f6a2134cd2813748a, type: 3}
+  - {fileID: 966176519842929255, guid: 0f62b502089fe8a82a2a1d0c14521b09, type: 3}
+  RoadMaterials:
+  - {fileID: 2100000, guid: b95f29489e5a457b0820e2d47ceb6f0f, type: 2}
+  - {fileID: 2100000, guid: 3f50368a8543b8d3fae655bf6e96b262, type: 2}
+  - {fileID: 2100000, guid: 57c50de4eafeee15099c4b6a62d6a011, type: 2}
+  - {fileID: 2100000, guid: d94f644dc511a1149a9a4fae89d241d0, type: 2}
+  - {fileID: 2100000, guid: 10267a6f541682455bd4e886eeb5df53, type: 2}
+  Skybox: {fileID: 0}

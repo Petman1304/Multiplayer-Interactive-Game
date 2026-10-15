@@ -8,6 +8,8 @@ namespace Getaway.Integration
     {
         public GameObject TruckArtwork, ShooterArtwork, TrafficArtwork, BuildingArtwork, SectionArtwork;
         public RouteDefinition Route;
+        public DowntownEnvironmentDefinition CityArtwork;
+        DowntownEnvironment downtown;
         public bool UseDowntownRoute;
         public static IntegratedWorld Instance { get; private set; }
         public Camera View { get; private set; }
@@ -65,7 +67,9 @@ namespace Getaway.Integration
             CreateSteeringWheel();
             truckViewParts = truck.GetComponentsInChildren<TruckViewPart>(true);
             shooterRenderers = roof.GetComponentsInChildren<Renderer>(true);
-            for (int i = 0; i < chunks.Length; i++) BuildChunk(i);
+            if (UseDowntownRoute && Route != null && CityArtwork != null)
+            { downtown = new GameObject("Downtown district").AddComponent<DowntownEnvironment>(); downtown.Initialize(Route, CityArtwork); }
+            else for (int i = 0; i < chunks.Length; i++) BuildChunk(i);
             for (int i = 0; i < tracers.Length; i++)
             {
                 tracers[i] = new GameObject("Network shot tracer " + i).AddComponent<LineRenderer>();
@@ -323,7 +327,8 @@ namespace Getaway.Integration
             }
             else fallingTime = 0;
             float scroll = (float)(renderedDistance % 200);
-            for (int i = 0; i < chunks.Length; i++)
+            if (downtown != null) downtown.Present(renderedDistance, state.RouteSeed);
+            else for (int i = 0; i < chunks.Length; i++)
             {
                 float ahead = (i - 1) * 200 - scroll;
                 float from = GetawayRules.RoadOffset(renderedDistance, ahead - 100);
