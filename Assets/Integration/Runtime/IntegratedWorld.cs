@@ -34,7 +34,11 @@ namespace Getaway.Integration
         readonly Transform[,] threatPool = new Transform[GetawayRules.ThreatSlots, 4];
         readonly Dictionary<GameObject, GameObject> artworkCache = new();
         readonly Dictionary<GameObject, Bounds> artworkBounds = new();
-        readonly LineRenderer[] tracers = new LineRenderer[8];
+        readonly LineRenderer[] tracers = new LineRenderer[8], tracerCores = new LineRenderer[8];
+        readonly LineRenderer[,] impactSparks = new LineRenderer[8,3];
+        readonly bool[] tracerHits = new bool[8];
+        readonly float[] tracerBorn = new float[8], tracerArrival = new float[8];
+        ShooterWeaponView weaponView;
         readonly float[] tracerExpires = new float[8];
         readonly double[] tracerAnchors = new double[8];
         readonly Vector3[] tracerStarts = new Vector3[8], tracerEnds = new Vector3[8];
@@ -72,19 +76,26 @@ namespace Getaway.Integration
             CreateSteeringWheel();
             truckViewParts = truck.GetComponentsInChildren<TruckViewPart>(true);
             shooterRenderers = roof.GetComponentsInChildren<Renderer>(true);
+            var weaponObject=new GameObject("Shooter weapon presentation");weaponObject.transform.SetParent(View.transform,false);
+            weaponView=weaponObject.AddComponent<ShooterWeaponView>();weaponView.Initialize();weaponView.CreateWorld(roof);
             if (UseDowntownRoute && Route != null && CityArtwork != null)
             { downtown = new GameObject("Downtown district").AddComponent<DowntownEnvironment>(); downtown.Initialize(Route, CityArtwork); var lighting = gameObject.AddComponent<DowntownRendering>(); lighting.Initialize(View, CityArtwork);
             }
             else for (int i = 0; i < chunks.Length; i++) BuildChunk(i);
             for (int i = 0; i < tracers.Length; i++)
             {
-                tracers[i] = new GameObject("Network shot tracer " + i).AddComponent<LineRenderer>();
-                tracers[i].sharedMaterial = Material(new Color(1, .8f, .25f), true);
-                tracers[i].positionCount = 2; tracers[i].startWidth = .055f; tracers[i].endWidth = .015f;
-                tracers[i].enabled = false;
+                tracers[i]=TraceLine("Amber shot streak "+i,new Color(1,.56f,.12f),.035f);
+                tracerCores[i]=TraceLine("Shot core "+i,new Color(1,.97f,.79f),.011f);
+                for(int arm=0;arm<3;arm++) impactSparks[i,arm]=TraceLine("Impact spark "+i+"/"+arm,new Color(1,.78f,.32f),.018f);
             }
             audioSource = gameObject.AddComponent<AudioSource>(); audioSource.spatialBlend = 0; audioSource.volume = .22f;
             shotSound = Tone("Shot", 130, .075f); impactSound = Tone("Impact", 65, .14f); sirenSound = Tone("Siren", 650, 1.2f);
+        }
+        LineRenderer TraceLine(string name,Color color,float width)
+        {
+            var line=new GameObject(name).AddComponent<LineRenderer>();line.sharedMaterial=Material(color,true);
+            line.positionCount=2;line.startWidth=width;line.endWidth=width*.25f;line.numCapVertices=2;
+            line.shadowCastingMode=UnityEngine.Rendering.ShadowCastingMode.Off;line.receiveShadows=false;line.enabled=false;return line;
         }
         AudioClip Tone(string name, float frequency, float duration)
         {
@@ -400,21 +411,54 @@ namespace Getaway.Integration
                 part.GetComponent<Renderer>().forceRenderingOff = part.Cockpit && (!cockpitView || part.InteriorDuplicate);
             }
             foreach (var renderer in shooterRenderers)
-                renderer.forceRenderingOff = live && !driverView && !renderer.transform.IsChildOf(gun);
+                renderer.forceRenderingOff = (live && !driverView) || renderer.transform.IsChildOf(gun);
+            weaponView.Pose(live && !driverView,state.Phase==RoundPhase.Playing && aim,state.ReloadTime,input!=null?input.AimYaw:0,input!=null?input.AimPitch:4,Time.deltaTime);
+            weaponView.WorldWeapon.gameObject.SetActive(!live || driverView);
+            weaponView.WorldWeapon.localRotation=Quaternion.Euler(state.Pitch,0,0);
             if (state.Hull < lastHull) { damageUntil = Time.unscaledTime + .5f; audioSource.PlayOneShot(impactSound); }
             lastHull = state.Hull;
             for (int i = 0; i < tracers.Length; i++)
             {
-                tracers[i].enabled = Time.unscaledTime < tracerExpires[i];
-                if (tracers[i].enabled && route != null) { Vector3 shift = route.Sample(tracerAnchors[i]).RelativeTo(routePose); tracers[i].SetPosition(0, tracerStarts[i] + shift); tracers[i].SetPosition(1, tracerEnds[i] + shift); }
+                float age=Time.unscaledTime-tracerBorn[i];bool active=Time.unscaledTime<tracerExpires[i];
+                if(!active && (!tracerHits[i] || age>tracerArrival[i]+.11f))
+                {tracers[i].enabled=tracerCores[i].enabled=false;for(int arm=0;arm<3;arm++)impactSparks[i,arm].enabled=false;continue;}
+                Vector3 shift=route!=null?route.Sample(tracerAnchors[i]).RelativeTo(routePose):Vector3.zero;
+                ShotTrace.Sample(tracerStarts[i],tracerEnds[i],age,out var tail,out var head,out float width);
+                tracers[i].enabled=tracerCores[i].enabled=active && (head-tail).sqrMagnitude>.0001f;
+                if(tracers[i].enabled)
+                {
+                    tracers[i].SetPosition(0,tail+shift);tracers[i].SetPosition(1,head+shift);tracers[i].startWidth=.035f*width;tracers[i].endWidth=.005f*width;
+                    tracerCores[i].SetPosition(0,tail+shift);tracerCores[i].SetPosition(1,head+shift);tracerCores[i].startWidth=.011f*width;tracerCores[i].endWidth=.003f*width;
+                }
+                float arrival=tracerArrival[i];
+                float burst=age-arrival;
+                for(int arm=0;arm<3;arm++)
+                {
+                    var spark=impactSparks[i,arm];spark.enabled=tracerHits[i] && burst>=0 && burst<.11f;
+                    if(!spark.enabled)continue;
+                    var back=(tracerStarts[i]-tracerEnds[i]).normalized;
+                    var right=Vector3.Cross(back,Mathf.Abs(back.y)<.9f?Vector3.up:Vector3.right).normalized;
+                    var up=Vector3.Cross(back,right);float angle=arm*Mathf.PI*2/3+tracerBorn[i];
+                    var direction=right*Mathf.Cos(angle)+up*Mathf.Sin(angle);
+                    var at=tracerEnds[i]+shift+back*.03f;float radius=(.16f+arrival*1.2f)*(1-burst/.11f);
+                    spark.SetPosition(0,at+direction*radius*.15f);spark.SetPosition(1,at+direction*radius);spark.widthMultiplier=.018f*(1-burst/.11f);
+                }
             }
         }
         public void ShowShot(Vector3 from, Vector3 to, bool hit, double anchorDistance = 0)
         {
             int i = tracerIndex++ % tracers.Length;
             if (tracers[i] == null) return;
-            tracerAnchors[i] = anchorDistance; tracerStarts[i] = from; tracerEnds[i] = to;
-            tracers[i].SetPosition(0, from); tracers[i].SetPosition(1, to); tracerExpires[i] = Time.unscaledTime + .08f;
+            var route=GetawayRules.Route;
+            Vector3 shift=route!=null?route.Sample(anchorDistance).RelativeTo(route.Sample(renderedDistance)):Vector3.zero;
+            if(weaponView!=null)
+            {
+                from=(weaponView.Visible?weaponView.Muzzle.position:weaponView.WorldMuzzle.position)-shift;
+                weaponView.Fire();
+            }
+            tracerAnchors[i]=anchorDistance;tracerStarts[i]=from;tracerEnds[i]=to;tracerHits[i]=hit;tracerBorn[i]=Time.unscaledTime;
+            tracerArrival[i]=Vector3.Distance(from,to)/ShotTrace.Speed;
+            tracerExpires[i]=Time.unscaledTime+ShotTrace.Lifetime(from,to);
             audioSource.PlayOneShot(shotSound);
             if (hit) hitUntil = Time.unscaledTime + .16f;
         }
@@ -446,6 +490,7 @@ namespace Getaway.Integration
         void OnDestroy()
         {
             if (Instance == this) Instance = null;
+            if(weaponView!=null)Destroy(weaponView.gameObject);
             foreach (var m in materials.Values) if (m != null) Destroy(m);
             foreach (var material in insideTruckMaterials.Values) if (material != null) Destroy(material);
             foreach (var material in truckGlassMaterials.Values) if (material != null) Destroy(material);

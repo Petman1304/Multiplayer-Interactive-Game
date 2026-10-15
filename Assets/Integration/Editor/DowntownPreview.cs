@@ -10,11 +10,11 @@ using UnityEngine.SceneManagement;
 /// <summary>Small, explicitly invoked render; never enters Play or creates a second Editor.</summary>
 public static class DowntownPreview
 {
-    public static string Render(double distance, bool driver, string output, bool overhead = false)
+    public static string Render(double distance, bool driver, string output, bool overhead = false, bool firing = false, bool aiming = false, float lookYaw = 0, RouteDefinition suppliedRoute = null, DowntownEnvironmentDefinition suppliedArt = null)
     {
         if (EditorApplication.isPlaying) throw new InvalidOperationException("Stop Play before rendering a preview.");
-        var route = AssetDatabase.LoadAssetAtPath<RouteDefinition>(DowntownRouteAuthoring.AssetPath);
-        var art = AssetDatabase.LoadAssetAtPath<DowntownEnvironmentDefinition>(DowntownArtAuthoring.Root + "/DowntownEnvironment.asset");
+        var route = suppliedRoute != null ? suppliedRoute : AssetDatabase.LoadAssetAtPath<RouteDefinition>(DowntownRouteAuthoring.AssetPath);
+        var art = suppliedArt != null ? suppliedArt : AssetDatabase.LoadAssetAtPath<DowntownEnvironmentDefinition>(DowntownArtAuthoring.Root + "/DowntownEnvironment.asset");
         var scene = EditorSceneManager.NewPreviewScene(); var root = new GameObject("Downtown preview"); SceneManager.MoveGameObjectToScene(root, scene);
         var temporaryMaterials = new List<Material>(); var materialCache = new Dictionary<(Material, bool), Material>();
         RenderTexture target = null; Texture2D pixels = null; var previous = RenderTexture.active; DowntownRendering lighting = null;
@@ -60,8 +60,26 @@ public static class DowntownPreview
             // Explicit sky component also works when this isolated preview scene is not the active scene.
             cameraObject.AddComponent<Skybox>().material = art.Skybox;
             Vector3 eye = driver ? new Vector3(1.02f,2.48f,1.89f) : GetawayRules.RearShooterSpawn + new Vector3(0,GetawayRules.ShooterEyeHeight,.1f);
-            camera.transform.SetPositionAndRotation(pose.Rotation * eye, pose.Rotation * Quaternion.Euler(driver ? 0 : 4,0,0));
+            camera.transform.SetPositionAndRotation(pose.Rotation * eye, pose.Rotation * Quaternion.Euler(driver ? 0 : 4,lookYaw,0));
             if (overhead) { camera.transform.position = new Vector3(0,80,-55); camera.transform.LookAt(pose.Forward*90); }
+            if(!driver && !overhead)
+            {
+                var weaponObject=new GameObject("Shooter viewmodel preview");weaponObject.transform.SetParent(camera.transform,false);
+                var weapon=weaponObject.AddComponent<ShooterWeaponView>();weapon.Initialize();weapon.Pose(true,aiming,0,lookYaw,4,1);
+                if(aiming)camera.fieldOfView=48;
+                if(firing)
+                {
+                    weapon.Fire();weapon.Pose(true,aiming,0,lookYaw,4,.008f);
+                    ShotTrace.Sample(weapon.Muzzle.position,camera.transform.position+camera.transform.forward*80,.004f,out var tail,out var head,out _);
+                    for(int layer=0;layer<2;layer++)
+                    {
+                        var go=new GameObject("Tracer preview",typeof(LineRenderer));go.transform.SetParent(root.transform,false);
+                        var line=go.GetComponent<LineRenderer>();line.positionCount=2;line.SetPosition(0,tail);line.SetPosition(1,head);
+                        var mat=new Material(Shader.Find("Universal Render Pipeline/Unlit")){color=layer==0?new Color(1,.56f,.12f):new Color(1,.97f,.79f)};
+                        temporaryMaterials.Add(mat);line.sharedMaterial=mat;line.startWidth=layer==0?.035f:.011f;line.endWidth=.004f;
+                    }
+                }
+            }
             target = new RenderTexture(960,540,16); camera.targetTexture = target; camera.Render(); RenderTexture.active = target;
             pixels = new Texture2D(960,540,TextureFormat.RGB24,false); pixels.ReadPixels(new Rect(0,0,960,540),0,0); pixels.Apply();
             System.IO.File.WriteAllBytes(output,pixels.EncodeToPNG()); return output;
