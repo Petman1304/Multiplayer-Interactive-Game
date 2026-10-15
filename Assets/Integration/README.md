@@ -225,3 +225,19 @@ For a still, `DowntownPreview.Render(400, false, absolutePngPath, false, true)`
 renders the shooter firing; add `true` for the next aiming argument or `180` for
 `lookYaw` to inspect rear-facing placement. Temporary previews restore rendering
 settings and dispose their generated meshes/materials.
+
+### Sight and crosshair alignment
+
+The crosshair and fully aimed iron sights consume the same cached, projected
+firing-ray target. Both front-post tip and rear-notch reference are placed on the
+camera-to-target sight line, accounting for the offset between camera and shared
+firing origin. Aiming recoil translates along this line; hip-fire keeps its
+angular recoil/sway. The short aiming/reload transition remains cosmetic.
+The crosshair uses symmetric strokes rather than a text glyph, avoiding font
+bearing/padding offsets. Damage, fire direction and network protocol are unchanged.
+
+Projection checks pass for 144 front/rear sight projections within 0.25 pixels
+at 1280x720: 10/40/190 m targets, front/side/rear/wrap headings, FOV 48/75,
+and 4:3/16:9/21:9 aspect ratios, including recoil. An aimed edit-mode preview also
+uses the shared firing-ray target. Live Solo Debug and rebuilt Linux appearance
+remain manual checks; no Play or build was launched.

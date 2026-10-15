@@ -65,12 +65,28 @@ public static class DowntownPreview
             if(!driver && !overhead)
             {
                 var weaponObject=new GameObject("Shooter viewmodel preview");weaponObject.transform.SetParent(camera.transform,false);
-                var weapon=weaponObject.AddComponent<ShooterWeaponView>();weapon.Initialize();weapon.Pose(true,aiming,0,lookYaw,4,1);
-                if(aiming)camera.fieldOfView=48;
+                var weapon=weaponObject.AddComponent<ShooterWeaponView>();weapon.Initialize();
+                var previewRay=new Ray(RouteGeometry.Muzzle(route,distance,0,0),pose.Rotation*GetawayRules.Direction(lookYaw,4));
+                float previewRange=190;if(new Plane(Vector3.up,new Vector3(0,1.1f,0)).Raycast(previewRay,out var groundRange))previewRange=Mathf.Min(previewRange,groundRange);
+                var previewTarget=previewRay.GetPoint(previewRange);var localTarget=camera.transform.InverseTransformPoint(previewTarget);
+                weapon.Pose(true,aiming,0,lookYaw,4,1,localTarget);
+                if(aiming)
+                {
+                    camera.fieldOfView=48;
+                    var targetDirection=(previewTarget-camera.transform.position).normalized;
+                    var at=camera.transform.position+targetDirection*.15f;
+                    var markerMaterial=new Material(Shader.Find("Universal Render Pipeline/Unlit")){color=Color.cyan};temporaryMaterials.Add(markerMaterial);
+                    for(int axis=0;axis<2;axis++)
+                    {
+                        var markerObject=new GameObject("Aim-point preview marker",typeof(LineRenderer));markerObject.transform.SetParent(root.transform,false);
+                        var line=markerObject.GetComponent<LineRenderer>();line.sharedMaterial=markerMaterial;line.positionCount=2;
+                        var direction=axis==0?camera.transform.right:camera.transform.up;line.SetPosition(0,at-direction*.003f);line.SetPosition(1,at+direction*.003f);line.startWidth=line.endWidth=.0005f;
+                    }
+                }
                 if(firing)
                 {
-                    weapon.Fire();weapon.Pose(true,aiming,0,lookYaw,4,.008f);
-                    ShotTrace.Sample(weapon.Muzzle.position,camera.transform.position+camera.transform.forward*80,.004f,out var tail,out var head,out _);
+                    weapon.Fire();weapon.Pose(true,aiming,0,lookYaw,4,.008f,localTarget);
+                    ShotTrace.Sample(weapon.Muzzle.position,previewTarget,.004f,out var tail,out var head,out _);
                     for(int layer=0;layer<2;layer++)
                     {
                         var go=new GameObject("Tracer preview",typeof(LineRenderer));go.transform.SetParent(root.transform,false);
