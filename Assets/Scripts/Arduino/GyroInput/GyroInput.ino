@@ -23,7 +23,8 @@ float Gx, Gy, Gz;
 float roll, pitch, yaw;
 
 float epsilon = 0.1;
-int resetBtn = 6;
+int aimBtn = 6;
+int shootBtn = 7;
 
 //calibration
 float xMax = 1.02;
@@ -42,7 +43,7 @@ float xScale = 2 / (xMax - xMin);
 float yScale = 2 / (yMax - yMin);
 float zScale = 2 / (zMax - zMin);
 
-float yawOffset;
+float yawOffset = -0.02;
 
 
 Adafruit_MPU6050 mpu;
@@ -125,21 +126,22 @@ void setup(void) {
     break;
   }
 
-  float yawSum = 0;
-  for(int i = 0; i < 100; i++){
-    mpu.getEvent(&a, &g, &temp);
-    yawSum += g.gyro.z;
-    delay(50);
-  }
+  // float yawSum = 0;
+  // for(int i = 0; i < 100; i++){
+  //   mpu.getEvent(&a, &g, &temp);
+  //   yawSum += g.gyro.z;
+  //   delay(50);
+  // }
 
-  yawOffset = yawSum / 100;
-  Serial.print("yawOffset:");
-  Serial.println(yawOffset);
+  // yawOffset = yawSum / 100;
+  // Serial.print("yawOffset:");
+  // Serial.println(yawOffset);
 
 
   Serial.println("");
 
-  pinMode(5, INPUT);
+  pinMode(aimBtn, INPUT_PULLDOWN);
+  pinMode(shootBtn, INPUT_PULLDOWN);
 
   lastMillis = millis();
 }
@@ -190,7 +192,9 @@ void loop() {
   // Serial.print("yaw:");
   Serial.print(yaw);
   Serial.print(",");
-  Serial.println(digitalRead(5));
+  Serial.print(digitalRead(aimBtn));
+  Serial.print(",");
+  Serial.println(digitalRead(shootBtn));
 
   delay(50);
 }

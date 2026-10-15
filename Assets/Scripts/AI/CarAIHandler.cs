@@ -48,7 +48,7 @@ public class CarAIHandler : MonoBehaviour
     // Update is called once per frame
     void FixedUpdate()
     {
-        rigidbody.linearVelocity = new Vector3(0, 0, truckRigidBody.linearVelocity.z * 0.8f);
+        
 
         //Debug.Log("AI Updated");
     }
@@ -79,6 +79,6 @@ public class CarAIHandler : MonoBehaviour
     //Events
     private void OnEnable()
     {
-        carHandler.SetMaxVelocity(Random.Range(100, 200));
+        rigidbody.linearVelocity = new Vector3(0, 0, truckRigidBody.linearVelocity.z * 0.8f);
     }
 }
