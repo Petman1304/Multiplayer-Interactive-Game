@@ -25,7 +25,6 @@ namespace Getaway.Integration
                 return null;
             }
         }
-        float policeAttackIn = 3;
         readonly RoadThreat[] admission = new RoadThreat[GetawayRules.ThreatSlots + 2];
         readonly RoadThreat[] wave = new RoadThreat[2];
         readonly bool[] reachable = new bool[43], reachableNext = new bool[43];
@@ -90,7 +89,7 @@ namespace Getaway.Integration
             int round = simulation.Round + 1;
             simulation = new RoundState { Phase = RoundPhase.Countdown, Hull = GetawayRules.MaxHull, Countdown = 3, Round = round, RouteSeed = round * 7919, Pitch = 4, Balance = 100, Ammo = GetawayRules.Magazine, Reserve = 72 };
             random = new System.Random(round * 7919);
-            policeAttackIn = 3;
+            policeCooldownUntil = nextAdmission = 0;
             spawnIn = 1.5f; repairIn = 18; nextThreat = 0; nextEncounter = 0; encounterCircuit = 0;
             foreach (var m in Members) { m.fire = false; m.steer = m.walk = m.yaw = 0; m.pitch = 4; m.lastInput = -100; m.nextShot = 0; }
             for (int i = 0; i < Threats.Count; i++) Threats[i] = default;
@@ -115,7 +114,7 @@ namespace Getaway.Integration
             if (!GetawayRules.Finite(steering) || !GetawayRules.Finite(walking) || !GetawayRules.Finite(aimYaw) || !GetawayRules.Finite(aimPitch)) return;
             nextPacket = Time.unscaledTime + .015f;
             steer = Mathf.Clamp(steering, -1, 1); walk = Mathf.Clamp(walking, -1, 1);
-            yaw = Mathf.Clamp(aimYaw, -75, 75); pitch = Mathf.Clamp(aimPitch, -25, 60);
+            yaw = GetawayRules.NormalizeYaw(aimYaw); pitch = Mathf.Clamp(aimPitch, -25, 60);
             fire = shooting; lastInput = Time.unscaledTime;
         }
         public void Reload() { if (IsOwner) ReloadServerRpc(); }
@@ -195,7 +194,6 @@ namespace Getaway.Integration
                 if (simulation.ReloadTime == 0)
                 { int rounds = Mathf.Min(GetawayRules.Magazine - simulation.Ammo, simulation.Reserve); simulation.Ammo += rounds; simulation.Reserve -= rounds; }
             }
-            simulation.Pursuit = Mathf.Max(0, simulation.Pursuit - dt * .6f);
             simulation.Yaw = shooter.yaw; simulation.Pitch = shooter.pitch;
             simulation.Distance += simulation.Speed * dt;
 
@@ -212,6 +210,13 @@ namespace Getaway.Integration
                 var t = Threats[i]; if (!t.Active) continue;
                 var previousThreat = t;
                 float before = t.Z;
+                if (route != null && t.Kind == ThreatKind.Police)
+                {
+                    var message = EncounterMotion.PoliceStep(route, ref t, simulation.Distance, simulation.TruckX, simulation.Speed, dt);
+                    if (message != PursuitEvent.None) AnnouncePolice(message);
+                    if (!t.Active) policeCooldownUntil = simulation.Elapsed + 12;
+                    Threats[i] = t; continue; // Rear separation is enforced; never ram or use forward cleanup.
+                }
                 if (route != null) {
                     if (t.Phase == ThreatPhase.Signalling && t.PhaseTime + dt >= t.SignalSeconds
                         && (route.NearBendBoundary(simulation.Distance) || route.NearBendBoundary(t.RouteDistance)))
@@ -233,14 +238,10 @@ namespace Getaway.Integration
                 if (simulation.Phase == RoundPhase.Wrecked) return;
             }
             bool policeClose = false;
-            foreach (var t in Threats) if (t.Active && t.Kind == ThreatKind.Police && t.Z > -10 && t.Z < 65) policeClose = true;
-            if (policeClose)
-            {
-                simulation.Pursuit += dt * 5;
-                policeAttackIn -= dt;
-                if (policeAttackIn <= 0) { Damage(); policeAttackIn = 3; }
-            }
-            else policeAttackIn = 3;
+            foreach (var t in Threats)
+                if (t.Active && t.Kind == ThreatKind.Police && t.Phase == ThreatPhase.Pursuing && t.Z >= -45 && t.Z <= -22
+                    && (route == null || !route.NearBendBoundary(simulation.Distance))) policeClose = true;
+            simulation.Pursuit = Mathf.Clamp(simulation.Pursuit + dt * (policeClose ? 4 : -3), 0, 100);
             if (simulation.Phase == RoundPhase.Playing && simulation.Pursuit >= 100) Defeat(DefeatReason.Captured);
             if (simulation.Phase == RoundPhase.Playing && shooterFresh && shooter.fire && Time.unscaledTime >= shooter.nextShot)
             { shooter.nextShot = Time.unscaledTime + GetawayRules.FireInterval; Shoot(); }
@@ -314,7 +315,8 @@ namespace Getaway.Integration
                     {
                         for (int part = 0; part < count; part++)
                             for (int i = 0; i < Threats.Count; i++) if (!Threats[i].Active)
-                            { var t = wave[part]; t.Id = ++nextThreat; Threats[i] = t; break; }
+                            { var t = wave[part]; t.Id = ++nextThreat; Threats[i] = t;
+                                if (police) AnnouncePolice(PursuitEvent.Approaching); break; }
                         AdvanceEncounter(route); return;
                     }
                 }
@@ -322,6 +324,8 @@ namespace Getaway.Integration
             }
             AdvanceEncounter(route);
         }
+        void AnnouncePolice(PursuitEvent message)
+        { simulation.PoliceEvent = message; simulation.PoliceEventUntil = simulation.Elapsed + (message == PursuitEvent.Approaching ? 6 : 3); }
         void AdvanceEncounter(RouteDefinition route)
         {
             nextEncounter++;
@@ -365,7 +369,7 @@ namespace Getaway.Integration
             if (hit >= 0)
             {
                 var t = Threats[hit]; t.Health--; simulation.Hits++;
-                if (t.Health <= 0) { t.Active = false; if (t.Kind == ThreatKind.Police) { simulation.PoliceDefeated++; simulation.Pursuit = Mathf.Max(0, simulation.Pursuit - 18); } simulation.Score += t.Kind == ThreatKind.Police ? 75 : 30; }
+                if (t.Health <= 0) { t.Active = false; if (t.Kind == ThreatKind.Police) { simulation.PoliceDefeated++; simulation.Pursuit = Mathf.Max(0, simulation.Pursuit - 20); policeCooldownUntil = simulation.Elapsed + 12; AnnouncePolice(PursuitEvent.Defeated); } simulation.Score += t.Kind == ThreatKind.Police ? 75 : 30; }
                 Threats[hit] = t;
             }
             ShotClientRpc(origin, origin + direction * nearest, hit >= 0, simulation.Distance);

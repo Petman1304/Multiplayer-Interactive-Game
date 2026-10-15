@@ -136,7 +136,7 @@ namespace Getaway.Integration
                             horizontal = ViewingDriver
                                 ? GetawayRules.Axis(centered.x / Mathf.Max(.01f, SteeringFullScale) * (InvertSteering ? -1 : 1), .05f)
                                 : GetawayRules.Axis(-centered.x / .45f, .1f);
-                            AimYaw = Mathf.Clamp(centered.z * Mathf.Rad2Deg, -75, 75);
+                            AimYaw = GetawayRules.NormalizeYaw(Mathf.DeltaAngle(neutral.z * Mathf.Rad2Deg, sample.z * Mathf.Rad2Deg));
                             AimPitch = Mathf.Clamp(-centered.y * Mathf.Rad2Deg + 4, -25, 60);
                             Aiming = aimButton; fire = shootButton;
                         }
@@ -158,7 +158,7 @@ namespace Getaway.Integration
                         }
                         else
                         {
-                            AimYaw = Mathf.Clamp(AimYaw + delta.x, -75, 75);
+                            AimYaw = GetawayRules.NormalizeYaw(AimYaw + delta.x);
                             AimPitch = Mathf.Clamp(AimPitch - delta.y, -25, 60);
                         }
                     }
