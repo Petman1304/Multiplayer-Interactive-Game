@@ -168,7 +168,7 @@ namespace Getaway.Integration
                 GUILayout.BeginArea(new Rect(40, 38, 565, 646), card);
                 GUILayout.Label("CO-OP SURVIVAL  /  INTEGRATION", subtitle);
                 GUILayout.Label("BLIND GETAWAY", title);
-                GUILayout.Label("One wheelman. One roof shooter. Keep the truck alive.", body);
+                GUILayout.Label("One wheelman. One rear shooter. Keep the truck alive.", body);
                 GUILayout.Space(14);
                 panelScroll = GUILayout.BeginScrollView(panelScroll);
                 if (!connected) ConnectionPanel();
@@ -180,9 +180,9 @@ namespace Getaway.Integration
                 GUILayout.Label("FIELD MANUAL", subtitle); GUILayout.Label("Stay alive together", stat);
                 GUILayout.Label("DRIVER\nA / D or ← / → to steer. The truck accelerates automatically. Leave space to dodge traffic.", body);
                 GUILayout.Space(12);
-                GUILayout.Label("SHOOTER\nA / D to move across the roof. Move the mouse to look and aim. Hold left click or Space to fire. Hold right click to zoom.", body);
+                GUILayout.Label("SHOOTER\nA / D to balance in the cargo bed. Move the mouse to aim through 360 degrees. Hold left click or Space to fire. Hold right click to zoom.", body);
                 GUILayout.Space(12);
-                GUILayout.Label("Orange barriers: 1 hit\nTraffic: 2 hits\nPolice: 3 hits; they track your lane\nGreen packs: collect to repair 1 hull", body);
+                GUILayout.Label("Orange barriers: 1 hit\nTraffic: 2 hits\nPolice: 6 hits; rear pursuit raises capture pressure\nGreen packs: collect to repair 1 hull", body);
                 GUILayout.Space(12);
                 GUILayout.Label("Survive for distance. Earn points by dodging and destroying threats. Traffic builds as speed rises. Five damaging collisions wreck the truck.", body);
                 GUILayout.FlexibleSpace(); GUILayout.Label("CUSTOM HARDWARE IS THE PRIMARY CONTROLLER.\nKeyboard / mouse mode is available for testing.\nLAN / direct IP  ·  UDP 7777", small);

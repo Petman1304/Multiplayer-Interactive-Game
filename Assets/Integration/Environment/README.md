@@ -19,7 +19,7 @@ extending corridor, not a closed loop returning to its starting building.
 `RoadThreat.RouteDistance` is absolute progress; `LaneOffset` is lateral position.
 The replicated RouteSeed selects repeatable encounter/visual variants. Legacy X/Z
 fields and the old 500 m formulas are only used by the explicit rollback mode.
-The v2 handshake rejects pre-route network clients; use matching asset builds.
+The v3 handshake rejects older integration clients; use matching asset builds.
 
 All authority geometry and the reticle sample the route. Shots transform into
 oriented threat-box space; collisions test both truck and threat box axes and
@@ -52,20 +52,24 @@ with recycling slack. Each tile owns a fixed road mesh buffer and prewarmed modu
 variants. Road vertices update only on recycle; transforms update with the origin.
 No section or building is instantiated while the pool is presenting a run.
 
-Encounter entries are authored near 200, 430, 690, 900, 980, 1190, and 1700 m:
-blocked lane, staggered traffic, recovery, and police. Later circuits add a second
-staggered vehicle. The host permits at most 18 threats and spawns whole patterns
-only when slots are available. Boundary quiet zones defer waves; a wave that can
-no longer offer four seconds plus a 20 m warning margin is skipped. Recovery
-pickups do not block a lane. The spawn lead is at least 240 m or six seconds plus
-40 m at current speed. Ordinary hazards are not authored within 55 m of bend entry
-or exit. The shooter receives bend direction and time/distance; the driver does not.
+Encounter anchors at 200, 430, 690, 900, 980, 1050, 1190, and 1700 m target
+slow traffic, a blocked lane, lane-changing traffic, recovery, rear police,
+light traffic, staggered barriers, and recovery. The host schedules complete waves
+within budgets of four/six/eight threats by circuit; the fixed pool has 18 slots.
+It reserves lane-change corridors and validates moving occupancy over a 36 s
+horizon at constant speed, normal acceleration, and maximum supported acceleration.
+Warning lead intends six seconds at expected speed and reserves at least four
+seconds even under maximum acceleration. Quiet zones and active pursuit suppress
+conflicting demands. Unsafe or late waves are deferred or skipped, never forced. Lane choices are
+seeded; the legacy `Lane` field is not an override. `SpeedFraction`, `SignalSeconds`
+and `ChangeSeconds` use defaults 0.65/2/3 when zero. The lane-change pattern starts
+in the centre and chooses one adjacent destination.
 
-The conservative template checker expands obstacles by the full truck width and
-margin, reserves lateral travel/acceleration time at 42 m/s, and accounts for
-curve-reduced road-edge space. It proves paths through authored templates; it is
-not a proof against every player action or all later police lane-tracking choices.
-Those interactions still need two-player playtesting.
+The conservative checker projects swept oriented boxes into each sampled route
+frame and searches reachable lateral positions, including footprint, steering
+allowance and road-edge clearance. This is a bounded admission check, not a proof
+against arbitrary player inputs, all future combinations, or unmeasured network
+conditions. See the integration README for pursuit rules and manual acceptance.
 
 ## Editing and rebuilding
 
@@ -78,6 +82,7 @@ These explicit C# entry points are available without menu registration:
 - `DowntownArtAuthoring.Create()` rebuilds the six decorative prefabs/materials.
 - `DowntownRenderingAuthoring.Create()` rebuilds isolated renderer/quality/sky assets.
 - `DowntownVerification.Geometry()`, `.Pool()`, and `.Scene()` run edit-mode checks.
+- `LevelVerification.Run()` verifies moving encounters, scheduling, rear pursuit and v3 serialization.
 - `DowntownPreview.Render(distance, driver, absolutePngPath, overhead)` creates a
   960x540 still in a temporary preview scene, then restores rendering settings.
 
@@ -126,13 +131,14 @@ Completed in the existing Editor, without Play/build or another Editor:
 
 - Runtime and Editor code compile with no errors.
 - Metre spacing, minimum radius, all major boundaries, and distant-origin seams pass.
-- 512 seed/circuit encounter corridor checks pass from a centred start.
+- 512 deterministic encounter-authoring cases pass. Moving-wave admission has a separate
+  480-candidate check: 404 reachable / 76 rejected, with all pattern types represented.
 - Forward/lateral sweeps, adjacent-lane clearance, rear overhang, curved target rays,
   reverse-ray misses, and route/network state serialization round-trips pass.
 - Binary-keyboard steering at 42 m/s stays inside the road for an entire district;
   the check's conservative controller reached a maximum 2.009 m lateral offset.
 - 10,000 route samples allocate zero managed bytes after warm-up.
-- An 18 km recycling check retains seven tiles and exactly 1,625 environment transforms.
+- An 18 km recycling check retains seven tiles and exactly 1,373 environment transforms after proxy removal.
 - Driver/shooter stills confirm the road is visible, cab remains present, shooter
   sees over the roof, and the overhead road has continuous curves.
 - Scene references, one EventSystem, and isolated Low/Balanced settings pass.
@@ -166,3 +172,13 @@ Original FBX meshes/materials remain unchanged. The authoring recipe preserves t
 correction when regenerating modules. A driver-view still confirms closed walls;
 all nine placements pass material checks. The updated pool check passes with seven
 tiles, 1,373 transforms over 18 km, and zero scenery colliders. No Play/build was run.
+
+### Level update acceptance limits
+
+The v3 encounter and rear pursuit implementation passed compilation and pure
+edit-mode checks, including actual first-circuit lane-change admission and
+scheduler cooldown, quiet-zone, expiration and budget policies. These checks
+load isolated compiled code into the existing Editor and create only a temporary
+route copy; they do not start gameplay or a second Editor. New presentation
+(indicators, siren, rear aiming from the bed) and real two-client agreement still
+require the manual checks listed above. Performance acceptance remains unmeasured.

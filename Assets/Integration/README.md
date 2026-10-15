@@ -39,8 +39,8 @@ verify actual network latency or synchronization.
    returns the remaining host to the lobby; losing the host disconnects the client.
 
 Direct-IP LAN uses UDP 7777, with no Relay, matchmaking, or automatic discovery.
-Both instances must use the same route assets/build and v2 integration protocol.
-Older v1 clients are rejected because route-coordinate serialization changed.
+Both instances must use the same route assets/build and v3 integration protocol.
+Older v1/v2 clients are rejected because threat phases and full aiming require matching serialization.
 
 ## Primary custom controllers
 
@@ -68,17 +68,19 @@ encounters, balance, oriented swept collisions, health, capture pressure, ammuni
 shots, and score. Clients submit bounded input at 25 Hz; snapshots update at 20 Hz.
 There is no Rigidbody vehicle simulation. Speed rises to a maximum 42 m/s.
 
-Truck hull starts at five. Barricades take one hit, traffic two, police three.
-Crashes grant 1.5 s damage protection. Nearby police increase pursuit and attack
-at three-second intervals; destroying police reduces pressure. Repair packs
+Truck hull starts at five. Barricades take one hit, traffic two, rear police six.
+Crashes grant 1.5 s damage protection. Rear police approach with a siren, hold at least 22 m behind, and raise capture
+pressure by 4/s within 45 m after their warning. Pressure falls by 3/s outside
+that condition, including bend quiet zones. Police never ram or periodically damage
+hull. Defeating police removes 20 pressure; outrunning them by 75 m for 5 s ends
+the chase. Pursuits last at most 30 s with a 12 s cooldown afterward. Repair packs
 restore one hull and add 24 reserve rounds (maximum 120). Magazine size is 12;
 reload takes 1.8 s and empty magazines reload automatically when reserve remains.
 Defeat reasons are TruckDestroyed, Captured, and FellOff. There is no finite win
 condition, branching route selection, pedestrian simulation, or replay capture.
 
 The full `Truck ver 1` body is retained. Driver view adds `kemudi` without duplicate
-cab surfaces, uses the DriverEyeMount, and has no driver avatar. Only the curved
-windshield gets a transparent runtime material. Right steering rotates the rim
+cab surfaces, uses the DriverEyeMount, and has no driver avatar. The windshield and side/rear glazing use build-included transparent material variants. Right steering rotates the rim
 clockwise from the driver's seat. The shooter stands just behind the cab at
 `(0, 1.732, 0.65)` with a 2.2 m eye offset and sees no `kemudi` assembly.
 
@@ -126,3 +128,43 @@ Opaque doors, roof, pillars and dashboard retain their body materials. Rebuild b
 clients after updating; an already-built executable does not pick up asset changes.
 Front/side visibility was checked in an edit-mode preview. Linux player verification
 remains manual; no build or Play session was launched for this correction.
+
+## Moving traffic and police pursuit (v3)
+
+The route remains endless. Anchors at 200/430/690/900/980/1050/1190/1700 m target
+slow traffic, a blocked lane, a signalled adjacent lane change, recovery, rear police,
+light traffic, staggered stationary barriers, and recovery. They are scheduling
+targets: the host defers or skips unsafe waves. The first circuit permits four
+active threats; the next permits six, then eight, within the existing 18 slots.
+Later slow-traffic waves may contain two spaced cars; pursuit permits only one
+straight-driving traffic car ahead and suppresses lane-changing/staggered waves.
+
+Traffic speed is fixed on activation at 65% of truck speed, clamped to 14–28 m/s.
+Amber indicators signal for 2 s before a 3 s smooth adjacent-lane change. The host
+reserves its corridor; an unavailable or unsafe change falls back to staying in
+lane if that is safe, otherwise the entire wave waits or expires. No new lane
+change or pressure phase begins inside the 55 m bend-boundary quiet zones.
+
+Shooter mouse aim now turns through 360 degrees. Hardware yaw uses calibrated
+angular differences across the +/-180-degree boundary; packet format is unchanged.
+A/D balance remains truck-relative. The shooter sees rear distance and pursuit
+messages; both players hear the approach siren. Driver navigation remains verbal.
+
+`LevelVerification.Run()` is an explicitly invoked edit-mode check; it never starts
+Play or builds. Runtime/Editor source compilation and pure checks passed: 480
+seed/circuit/speed candidates (404 reachable, 76 rejected), actual first-circuit
+lane-change admission, occupied budgets, cooldown/single-pursuer policy, quiet
+zones, expiration, four-second warning bounds, an impassable wall, rear shots,
+pursuit timeout/escape, yaw seams, v3 serialization, and allocation-free traffic
+movement. Route seams, oriented collision/rays, keyboard curve control and zero
+route-sampling allocations also pass. Candidate checks cover three truck speed
+profiles and a 36 s horizon using conservative swept boxes and a sampled reachable
+corridor. They do not prove safety for every player action or future traffic state.
+
+Manual acceptance remains outstanding: rebuild matching clients; test each role
+hosted in turn, rear aiming/shooting, amber indicators and siren, defeat/rematch,
+disconnect, Solo Debug Tab switching, and physical controllers. Compare one Low
+build at 1280x720 with the Editor closed against the prior version, then measure
+CPU/GPU frame times and a 10-minute memory capture separately. The pure-check suite
+is not a frame-time benchmark or evidence of 60 FPS. No Play/build/profile run was
+started automatically during this implementation.

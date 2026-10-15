@@ -9,9 +9,9 @@ using UnityEngine.SceneManagement;
 public static class DowntownVerification
 {
     static void Check(bool pass, string message) { if (!pass) throw new Exception("Downtown verification: " + message); }
-    public static string Geometry()
+    public static string Geometry(RouteDefinition suppliedRoute = null)
     {
-        var route = AssetDatabase.LoadAssetAtPath<RouteDefinition>(DowntownRouteAuthoring.AssetPath);
+        var route = suppliedRoute != null ? suppliedRoute : AssetDatabase.LoadAssetAtPath<RouteDefinition>(DowntownRouteAuthoring.AssetPath);
         Check(route != null && route.IsBaked && route.DistrictCount == 1,"route asset");
         for(int i=1;i<route.Curves.Length;i++)
         {
@@ -74,7 +74,7 @@ public static class DowntownVerification
             using(var reader=new FastBufferReader(writer,Allocator.Temp))
             {reader.ReadNetworkSerializable(out RoundState copy);reader.ReadNetworkSerializable(out RoadThreat target);Check(copy.Equals(state)&&target.Equals(threat),"network route-coordinate round trip");}
         }
-        return "PASS: route seams/radius, 512 encounter safety cases, oriented collision/rays, network round-trip, zero sample allocations; binary-keyboard max offset="+maxX.ToString("F3")+"m";
+        return "PASS: route seams/radius, 512 deterministic authoring cases, oriented collision/rays, network round-trip, zero sample allocations; binary-keyboard max offset="+maxX.ToString("F3")+"m";
     }
     public static string Pool()
     {
