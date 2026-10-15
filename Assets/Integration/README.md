@@ -194,3 +194,34 @@ at most nine seconds empty, and four background cars at each tested speed.
 These are scheduling measurements, not a rendered visibility or performance test;
 they exclude the introduction and final recovery and do not simulate player combat
 or every steering action. Repeat Solo Debug manually to assess how the pacing feels.
+
+## Shooter weapon and shot presentation
+
+The original shooter gun was a scaled cube below the first-person eye line. The
+integration now uses a compact procedural carbine with a receiver, stock, barrel,
+magazine, open sights, grips and gloved hands. Geometry is combined into three
+material groups and shared with the world-view weapon. A camera-mounted cosmetic
+viewmodel provides hip-fire, centred aiming, recoil, light sway and a reload tilt.
+It follows the shooter's full rotation and is hidden in the driver POV. The source
+character prefab and custom-controller input remain unchanged.
+
+Confirmed shot RPCs now animate a pooled five-metre amber streak with a bright core,
+a short muzzle burst and small impact sparks. Local traces begin at the visible
+muzzle and converge on the host's hit endpoint; other views use the world muzzle.
+Shot anchors retain their route distance so floating-origin movement does not drag
+the effect with the truck. These effects are cosmetic: damage, ammunition, fire
+cadence and authoritative hitscan remain unchanged. There are no bullet objects,
+colliders or realtime muzzle lights; all shot effects reuse an eight-slot pool.
+
+`WeaponVerification.Run()` checks mesh sharing, collider absence, stable object
+counts across 100 shots and 1,000 animation steps, aim/role visibility, streak
+length/endpoints, floating-origin translation, zero-distance shots and zero
+managed allocations in tracer sampling. Runtime and Editor source compile.
+960x540 edit-mode previews checked hip-fire with flash/trace, aimed sights and
+rear-facing visibility. Play, live two-client agreement and Linux-build appearance
+still require manual testing; no Play/build/profile run was launched.
+
+For a still, `DowntownPreview.Render(400, false, absolutePngPath, false, true)`
+renders the shooter firing; add `true` for the next aiming argument or `180` for
+`lookYaw` to inspect rear-facing placement. Temporary previews restore rendering
+settings and dispose their generated meshes/materials.
