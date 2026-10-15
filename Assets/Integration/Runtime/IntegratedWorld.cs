@@ -68,7 +68,7 @@ namespace Getaway.Integration
             truckViewParts = truck.GetComponentsInChildren<TruckViewPart>(true);
             shooterRenderers = roof.GetComponentsInChildren<Renderer>(true);
             if (UseDowntownRoute && Route != null && CityArtwork != null)
-            { downtown = new GameObject("Downtown district").AddComponent<DowntownEnvironment>(); downtown.Initialize(Route, CityArtwork); }
+            { downtown = new GameObject("Downtown district").AddComponent<DowntownEnvironment>(); downtown.Initialize(Route, CityArtwork); var lighting = gameObject.AddComponent<DowntownRendering>(); lighting.Initialize(View, CityArtwork); }
             else for (int i = 0; i < chunks.Length; i++) BuildChunk(i);
             for (int i = 0; i < tracers.Length; i++)
             {

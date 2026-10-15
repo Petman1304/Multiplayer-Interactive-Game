@@ -7,5 +7,6 @@ namespace Getaway.Integration
         public GameObject[] Modules = new GameObject[6];
         public Material[] RoadMaterials = new Material[5];
         public Material Skybox;
+        public UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset Low, Balanced;
     }
 }

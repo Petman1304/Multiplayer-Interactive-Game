@@ -25,4 +25,6 @@ MonoBehaviour:
   - {fileID: 2100000, guid: 57c50de4eafeee15099c4b6a62d6a011, type: 2}
   - {fileID: 2100000, guid: d94f644dc511a1149a9a4fae89d241d0, type: 2}
   - {fileID: 2100000, guid: 10267a6f541682455bd4e886eeb5df53, type: 2}
-  Skybox: {fileID: 0}
+  Skybox: {fileID: 2100000, guid: c8f39da8acd85dc469ca48516cdaae02, type: 2}
+  Low: {fileID: 11400000, guid: 8717dbca59636fd669123e7802b4f8a0, type: 2}
+  Balanced: {fileID: 11400000, guid: 6440c02bd63973735bd11f1a766716a6, type: 2}

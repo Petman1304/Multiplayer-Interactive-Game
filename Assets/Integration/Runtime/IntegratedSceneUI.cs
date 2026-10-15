@@ -108,7 +108,7 @@ namespace Getaway.Integration
             invert = Action(hardware.transform, "INVERT STEERING: OFF", new Vector2(210, -145), () => input.InvertSteering = !input.InvertSteering, 370);
             Action(hardware.transform, "CALIBRATE / C", new Vector2(-210, -220), () => input.Calibrate(), 370);
             graphics = Action(settings.transform, "GRAPHICS", new Vector2(210, -220), () =>
-            { if (QualitySettings.names.Length > 0) QualitySettings.SetQualityLevel((QualitySettings.GetQualityLevel() + 1) % QualitySettings.names.Length, false); }, 370);
+            { if (DowntownRendering.Instance != null) { DowntownRendering.Instance.Cycle(); return; } if (QualitySettings.names.Length > 0) QualitySettings.SetQualityLevel((QualitySettings.GetQualityLevel() + 1) % QualitySettings.names.Length, false); }, 370);
             settingsStatus = Text(settings.transform, "Controller status", 17); Place(settingsStatus.rectTransform, new Vector2(0, -285), new Vector2(1040, 70));
             var resume = Action(settings.transform, "BACK / ESC", Vector2.zero, () => game.OpenSettings(), 240);
             var rect = (RectTransform)resume.transform; rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(1, 1); rect.anchoredPosition = new Vector2(-25, -22); rect.sizeDelta = new Vector2(210, 46);
@@ -270,7 +270,8 @@ namespace Getaway.Integration
             volumeLabel.text = $"VOLUME {AudioListener.volume:P0}"; sensitivityLabel.text = $"STEERING SENSITIVITY {input.SteeringSensitivity:0.0}";
             rangeLabel.text = $"FULL STEERING RANGE {input.SteeringFullScale:0.00}"; SetLabel(invert, "INVERT STEERING: " + (input.InvertSteering ? "ON" : "OFF"));
             leaveSettings.gameObject.SetActive(NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening);
-            if (QualitySettings.names.Length > 0) SetLabel(graphics, "GRAPHICS: " + QualitySettings.names[QualitySettings.GetQualityLevel()].ToUpperInvariant());
+            if (DowntownRendering.Instance != null) SetLabel(graphics, "GRAPHICS: " + DowntownRendering.Instance.PresetName);
+            else if (QualitySettings.names.Length > 0) SetLabel(graphics, "GRAPHICS: " + QualitySettings.names[QualitySettings.GetQualityLevel()].ToUpperInvariant());
             settingsStatus.text = input.CustomController ? input.DeviceStatus + "\nDriver: 9600 baud / Shooter: 115200 baud / center the device, then calibrate" : "Tab switches first-person roles in Solo Debug. Esc returns to the game.\nThe multiplayer game continues while settings are open.";
         }
         void RefreshHUD(RoundState state, bool debug)
