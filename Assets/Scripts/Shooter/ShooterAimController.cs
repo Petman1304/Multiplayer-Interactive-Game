@@ -22,7 +22,7 @@ public class ShooterAimController : MonoBehaviour
     // Update is called once per frame
     void FixedUpdate()
     {
-        if(serialGyroInputHandler.resetAngle == 1)
+        if(serialGyroInputHandler.aimDown == 1)
         {
             //moveCamera.SetActive(false);
             //aimCamera.SetActive(true);

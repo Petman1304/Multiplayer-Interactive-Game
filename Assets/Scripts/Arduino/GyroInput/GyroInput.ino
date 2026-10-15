@@ -23,7 +23,8 @@ float Gx, Gy, Gz;
 float roll, pitch, yaw;
 
 float epsilon = 0.1;
-int resetBtn = 6;
+int aimBtn = 6;
+int shootBtn = 7;
 
 //calibration
 float xMax = 1.02;
@@ -139,7 +140,8 @@ void setup(void) {
 
   Serial.println("");
 
-  pinMode(5, INPUT);
+  pinMode(aimBtn, INPUT_PULLDOWN);
+  pinMode(shootBtn, INPUT_PULLDOWN);
 
   lastMillis = millis();
 }
@@ -190,7 +192,9 @@ void loop() {
   // Serial.print("yaw:");
   Serial.print(yaw);
   Serial.print(",");
-  Serial.println(digitalRead(5));
+  Serial.print(digitalRead(aimBtn));
+  Serial.print(",");
+  Serial.println(digitalRead(shootBtn));
 
   delay(50);
 }

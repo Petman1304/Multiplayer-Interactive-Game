@@ -68,7 +68,7 @@ public class GunController : MonoBehaviour
     {
         while (true)
         {
-            if(gyroInputHandler.resetAngle == 1)
+            if(gyroInputHandler.shootGun == 1)
             {
                 ShootGun();
                 yield return fireRate;
