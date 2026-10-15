@@ -82,7 +82,8 @@ public static class DowntownRouteAuthoring
         }
         points.Add(dense[dense.Count - 1]); route.Points = points.ToArray();
         // Authored sections are expressed in nominal metres; reconcile tiny bake integration error.
-        double ratio = distance / 1800;
+        double nominalLength = route.Sections.Length > 0 ? route.Sections[route.Sections.Length - 1].Start + route.Sections[route.Sections.Length - 1].Length : distance;
+        double ratio = distance / Math.Max(1, nominalLength);
         for (int i = 0; i < route.Sections.Length; i++) { var s = route.Sections[i]; s.Start *= ratio; s.Length *= ratio; route.Sections[i] = s; }
     }
 }

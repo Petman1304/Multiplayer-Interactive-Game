@@ -24,7 +24,7 @@ namespace Getaway.Integration
         // Conservative path proof at maximum speed, using expanded truck footprint and lane-change time.
         public static bool Validate(RouteDefinition route, int seed, long circuit, out string reason)
         {
-            int reachable = 7; double previous = circuit * route.Length;
+            int reachable = 2; double previous = circuit * route.Length;
             float worstDrift = 0;
             foreach (var point in route.Points) worstDrift = Mathf.Max(worstDrift, Mathf.Abs(point.Curvature * 42 * route.CurveDriftMetres));
             float lateralAuthority = Mathf.Max(.1f, 8 - worstDrift);
@@ -39,7 +39,7 @@ namespace Getaway.Integration
                     double availableTime = System.Math.Max(0, (threat.RouteDistance - previous - halfLength * 2) / 42);
                     for (int lane = -1; lane <= 1; lane++)
                     {
-                        float x = lane * 5.2f;
+                        float x = lane * Mathf.Min(5.2f, RouteGeometry.TruckLateralLimit(route, threat.RouteDistance));
                         float forbidden = (GetawayRules.TruckCollisionSize.x + GetawayRules.ThreatSize(threat.Kind).x) * .5f + .2f;
                         if (Mathf.Abs(x - threat.LaneOffset) < forbidden) continue;
                         for (int from = -1; from <= 1; from++)

@@ -5,6 +5,12 @@ namespace Getaway.Integration
     /// <summary>Route-oriented geometry shared by authority, presentation and edit-mode checks.</summary>
     public static class RouteGeometry
     {
+        public static float TruckLateralLimit(RouteDefinition route, double distance)
+        {
+            float k = Mathf.Max(Mathf.Abs(route.Sample(distance - 8).Curvature), Mathf.Abs(route.Sample(distance).Curvature), Mathf.Abs(route.Sample(distance + 4).Curvature));
+            // Rear overhang sweeps outside a curved centreline; reserve its sagitta plus a small curb margin.
+            return GetawayRules.MaxTruckCenterX - k * 32 - .05f;
+        }
         public static float CurveDrift(RouteDefinition route, double distance, float speed) => route.Sample(distance).Curvature * speed * route.CurveDriftMetres;
         public static Vector3 Muzzle(RouteDefinition route, double distance, float truckX, float roofX)
         {

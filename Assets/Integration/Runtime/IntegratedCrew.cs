@@ -169,9 +169,10 @@ namespace Getaway.Integration
             simulation.LateralSpeed = Mathf.MoveTowards(simulation.LateralSpeed, simulation.Steering * 8, dt * 22);
             float roadShift = route != null ? RouteGeometry.CurveDrift(route, simulation.Distance, simulation.Speed) * dt : GetawayRules.RoadOffset(simulation.Distance, simulation.Speed * dt);
             simulation.TruckX += simulation.LateralSpeed * dt - roadShift;
-            if (Mathf.Abs(simulation.TruckX) > GetawayRules.MaxTruckCenterX)
+            float lateralLimit = route != null ? RouteGeometry.TruckLateralLimit(route, simulation.Distance) : GetawayRules.MaxTruckCenterX;
+            if (Mathf.Abs(simulation.TruckX) > lateralLimit)
             {
-                simulation.TruckX = Mathf.Clamp(simulation.TruckX, -GetawayRules.MaxTruckCenterX, GetawayRules.MaxTruckCenterX);
+                simulation.TruckX = Mathf.Clamp(simulation.TruckX, -lateralLimit, lateralLimit);
                 Damage(); simulation.Pursuit += dt * 12;
                 if (simulation.Phase == RoundPhase.Wrecked) return;
             }

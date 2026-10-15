@@ -65,18 +65,21 @@ namespace Getaway.Integration
                     {
                         lastSend = Time.unscaledTime;
                         float yaw = 0, pitch = 4;
-                        Vector3 origin = GetawayRules.Muzzle(s.TruckX, s.RoofX);
+                        var route = GetawayRules.Route;
+                        Vector3 origin = route != null ? RouteGeometry.Muzzle(route, s.Distance, s.TruckX, s.RoofX) : GetawayRules.Muzzle(s.TruckX, s.RoofX);
                         float nearest = float.MaxValue;
                         foreach (var t in session.Threats)
                         {
                             if (!t.Active || t.Kind == ThreatKind.Repair || t.Z < 8 || t.Z >= nearest) continue;
                             nearest = t.Z;
-                            Vector3 delta = GetawayRules.ThreatBounds(GetawayRules.PresentedThreat(t, s.Distance)).center - origin;
+                            Vector3 center = route != null ? route.Sample(t.RouteDistance).RelativeTo(route.Sample(s.Distance), t.LaneOffset) + Vector3.up * (GetawayRules.ThreatSize(t.Kind).y * .5f) : GetawayRules.ThreatBounds(GetawayRules.PresentedThreat(t, s.Distance)).center;
+                            Vector3 delta = center - origin;
+                            if (route != null) delta = Quaternion.Inverse(route.Sample(s.Distance).Rotation) * delta;
                             yaw = Mathf.Atan2(delta.x, delta.z) * Mathf.Rad2Deg;
                             pitch = -Mathf.Atan2(delta.y, new Vector2(delta.x, delta.z).magnitude) * Mathf.Rad2Deg;
                         }
                         float walk = Mathf.Clamp((Mathf.Sin(Time.unscaledTime * .8f) * .35f - s.RoofX) * 2 - s.RoofVelocity, -1, 1);
-                        float steer = Mathf.Clamp((GetawayRules.RoadOffset(s.Distance, s.Speed * .1f) * 10 - s.TruckX) / 8, -1, 1);
+                        float steer = route != null ? Mathf.Clamp((RouteGeometry.CurveDrift(route, s.Distance, s.Speed) - s.TruckX * 2 - (s.LateralSpeed - RouteGeometry.CurveDrift(route, s.Distance, s.Speed)) * .3f) / 8, -1, 1) : Mathf.Clamp((GetawayRules.RoadOffset(s.Distance, s.Speed * .1f) * 10 - s.TruckX) / 8, -1, 1);
                         local.SendInput(steer, walk, yaw, pitch, true);
                     }
                     if (mode == "host" && Time.unscaledTime - playingSince > 28)

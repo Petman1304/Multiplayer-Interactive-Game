@@ -41,6 +41,9 @@ namespace Getaway.Integration
         int tracerIndex, lastRound = -1, lastHull = GetawayRules.MaxHull;
         float hitUntil, damageUntil;
         double renderedDistance;
+        float renderedTruckX;
+        readonly double[] renderedThreatDistances = new double[GetawayRules.ThreatSlots];
+        readonly float[] renderedThreatLanes = new float[GetawayRules.ThreatSlots];
         GUIStyle reticle;
         IntegratedInput input;
         AudioSource audioSource;
@@ -68,7 +71,8 @@ namespace Getaway.Integration
             truckViewParts = truck.GetComponentsInChildren<TruckViewPart>(true);
             shooterRenderers = roof.GetComponentsInChildren<Renderer>(true);
             if (UseDowntownRoute && Route != null && CityArtwork != null)
-            { downtown = new GameObject("Downtown district").AddComponent<DowntownEnvironment>(); downtown.Initialize(Route, CityArtwork); var lighting = gameObject.AddComponent<DowntownRendering>(); lighting.Initialize(View, CityArtwork); }
+            { downtown = new GameObject("Downtown district").AddComponent<DowntownEnvironment>(); downtown.Initialize(Route, CityArtwork); var lighting = gameObject.AddComponent<DowntownRendering>(); lighting.Initialize(View, CityArtwork);
+            }
             else for (int i = 0; i < chunks.Length; i++) BuildChunk(i);
             for (int i = 0; i < tracers.Length; i++)
             {
@@ -309,7 +313,8 @@ namespace Getaway.Integration
             renderedDistance = snap ? state.Distance : renderedDistance + (state.Distance - renderedDistance) * blend;
             var route = GetawayRules.Route;
             var routePose = route != null ? route.Sample(renderedDistance) : default;
-            truck.position = route != null ? routePose.Right * state.TruckX : new Vector3(state.TruckX, 0, 0);
+            renderedTruckX = snap ? state.TruckX : Mathf.Lerp(renderedTruckX, state.TruckX, blend);
+            truck.position = route != null ? routePose.Right * renderedTruckX : new Vector3(renderedTruckX, 0, 0);
             truck.rotation = route != null ? routePose.Rotation : Quaternion.identity;
             Vector3 shooterPosition = GetawayRules.RearShooterSpawn + Vector3.right * state.RoofX;
             roof.localPosition = Vector3.Lerp(roof.localPosition, shooterPosition, blend);
@@ -344,10 +349,12 @@ namespace Getaway.Integration
                 var threat = session.Threats[i]; bool fresh = threatViews[i] == null || threatIds[i] != threat.Id || threatKinds[i] != threat.Kind;
                 if (fresh) BuildThreat(i, threat);
                 threatViews[i].gameObject.SetActive(true);
-                var threatPose = route != null ? route.Sample(threat.RouteDistance) : default;
-                Vector3 target = route != null ? threatPose.RelativeTo(routePose, threat.LaneOffset) : new Vector3(threat.X + GetawayRules.RoadOffset(state.Distance, threat.Z), 0, threat.Z);
+                renderedThreatDistances[i] = fresh || snap ? threat.RouteDistance : renderedThreatDistances[i] + (threat.RouteDistance-renderedThreatDistances[i])*blend;
+                renderedThreatLanes[i] = fresh || snap ? threat.LaneOffset : Mathf.Lerp(renderedThreatLanes[i],threat.LaneOffset,blend);
+                var threatPose = route != null ? route.Sample(renderedThreatDistances[i]) : default;
+                Vector3 target = route != null ? threatPose.RelativeTo(routePose, renderedThreatLanes[i]) : new Vector3(threat.X + GetawayRules.RoadOffset(state.Distance, threat.Z), 0, threat.Z);
                 threatViews[i].rotation = route != null ? threatPose.Rotation : Quaternion.identity;
-                threatViews[i].position = fresh || snap ? target : Vector3.Lerp(threatViews[i].position, target, blend);
+                threatViews[i].position = route != null || fresh || snap ? target : Vector3.Lerp(threatViews[i].position, target, blend);
             }
             bool driverView = input != null && input.ViewingDriver;
             bool aim = !driverView && input != null && input.Aiming;
@@ -400,8 +407,17 @@ namespace Getaway.Integration
             Ray aimRay = new Ray(MuzzlePosition, truck.rotation * GetawayRules.Direction(input.AimYaw, input.AimPitch));
             float range = 190;
             if (new Plane(Vector3.up, new Vector3(0, 1.1f, 0)).Raycast(aimRay, out float ground)) range = Mathf.Min(range, ground);
-            foreach (var threat in IntegratedCrew.Session.Threats)
-                if (threat.Active && threat.Kind != ThreatKind.Repair && GetawayRules.ThreatBounds(GetawayRules.PresentedThreat(threat, IntegratedCrew.Session.State.Value.Distance)).IntersectRay(aimRay, out float hit) && hit > 0) range = Mathf.Min(range, hit);
+            for (int i = 0; i < IntegratedCrew.Session.Threats.Count; i++)
+            {
+                var threat = IntegratedCrew.Session.Threats[i];
+                if (GetawayRules.Route != null) { threat.RouteDistance = renderedThreatDistances[i]; threat.LaneOffset = renderedThreatLanes[i]; }
+                if (threat.Active && threat.Kind != ThreatKind.Repair)
+                {
+                    float hit; var route = GetawayRules.Route;
+                    bool intersects = route != null ? RouteGeometry.Raycast(route, threat, renderedDistance, aimRay, out hit) : GetawayRules.ThreatBounds(GetawayRules.PresentedThreat(threat, IntegratedCrew.Session.State.Value.Distance)).IntersectRay(aimRay, out hit);
+                    if (intersects && hit > 0) range = Mathf.Min(range, hit);
+                }
+            }
             Vector3 point = View.WorldToScreenPoint(aimRay.GetPoint(range));
             if (point.z <= 0) return;
             GUI.color = HitFeedback > 0 ? new Color(1, .65f, .2f) : Color.white;
