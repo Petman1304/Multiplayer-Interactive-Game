@@ -10,6 +10,11 @@ public class ShooterAimController : MonoBehaviour
     public SerialGyroInputHandler serialGyroInputHandler;
     public CinemachineRotationComposer cinemachineRotation;
 
+    private WaitForSeconds wait = new WaitForSeconds(0.1f);
+    
+    [SerializeField]
+    public Canvas reticle;
+
     private Vector3 startOffset;
     [SerializeField]
     float aimSensitivity = 1.0f;
@@ -17,6 +22,8 @@ public class ShooterAimController : MonoBehaviour
     void Start()
     {
         startOffset = cinemachineRotation.TargetOffset;
+
+        StartCoroutine(showReticle());
     }
 
     // Update is called once per frame
@@ -48,6 +55,19 @@ public class ShooterAimController : MonoBehaviour
 
     IEnumerator showReticle()
     {
-        throw new NotImplementedException();
+        while (true)
+        {
+            if (aimCamera.Priority == 1)
+            {
+                reticle.enabled = true;
+            }
+            else
+            {
+                reticle.enabled = false;
+            }
+
+            yield return wait;
+        }
+        
     }
 }
