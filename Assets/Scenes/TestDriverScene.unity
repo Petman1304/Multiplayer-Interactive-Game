@@ -1662,21 +1662,45 @@ PrefabInstance:
       propertyPath: m_Name
       value: Truck
       objectReference: {fileID: 0}
-    - target: {fileID: 6910280398575302855, guid: 11135b3e1e61011439126f6eddf46c6c, type: 3}
-      propertyPath: maxSteerVelocity
-      value: 100
+    - target: {fileID: 877980737636094388, guid: 11135b3e1e61011439126f6eddf46c6c, type: 3}
+      propertyPath: field of view
+      value: 63.079857
       objectReference: {fileID: 0}
-    - target: {fileID: 6910280398575302855, guid: 11135b3e1e61011439126f6eddf46c6c, type: 3}
-      propertyPath: truckAcceleration
-      value: 50
+    - target: {fileID: 877980737636094388, guid: 11135b3e1e61011439126f6eddf46c6c, type: 3}
+      propertyPath: far clip plane
+      value: 1000
       objectReference: {fileID: 0}
-    - target: {fileID: 6910280398575302855, guid: 11135b3e1e61011439126f6eddf46c6c, type: 3}
-      propertyPath: maxForwardVelocity
-      value: 200
+    - target: {fileID: 877980737636094388, guid: 11135b3e1e61011439126f6eddf46c6c, type: 3}
+      propertyPath: near clip plane
+      value: 0.3
       objectReference: {fileID: 0}
-    - target: {fileID: 6910280398575302855, guid: 11135b3e1e61011439126f6eddf46c6c, type: 3}
-      propertyPath: steerInputMultiplier
-      value: 100
+    - target: {fileID: 877980737636094388, guid: 11135b3e1e61011439126f6eddf46c6c, type: 3}
+      propertyPath: orthographic size
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 4136837940962908871, guid: 11135b3e1e61011439126f6eddf46c6c, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 26.1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4136837940962908871, guid: 11135b3e1e61011439126f6eddf46c6c, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -20
+      objectReference: {fileID: 0}
+    - target: {fileID: 4136837940962908871, guid: 11135b3e1e61011439126f6eddf46c6c, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.97236997
+      objectReference: {fileID: 0}
+    - target: {fileID: 4136837940962908871, guid: 11135b3e1e61011439126f6eddf46c6c, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0.23344536
+      objectReference: {fileID: 0}
+    - target: {fileID: 4136837940962908871, guid: 11135b3e1e61011439126f6eddf46c6c, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4136837940962908871, guid: 11135b3e1e61011439126f6eddf46c6c, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8880349155424627702, guid: 11135b3e1e61011439126f6eddf46c6c, type: 3}
       propertyPath: m_LocalPosition.x
