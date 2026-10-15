@@ -1018,6 +1018,7 @@ MonoBehaviour:
   aimCamera: {fileID: 1013096578980970127}
   serialGyroInputHandler: {fileID: 398772528204052651}
   cinemachineRotation: {fileID: 1333271420836288786}
+  reticle: {fileID: 682333938639391807}
   aimSensitivity: 10
 --- !u!54 &3289072888099576674
 Rigidbody:
