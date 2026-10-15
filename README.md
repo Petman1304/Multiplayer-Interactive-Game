@@ -7,8 +7,10 @@ Additional Package :
 
 Open `Assets/Scenes/IntegratedGetaway.unity` for the new two-player integration.
 Host/join on LAN, choose driver and shooter, both ready up, then start survival.
-Shooter-only navigation, balance/falling, ammunition/reloading, police pressure,
-and five repeating district stages follow the GDD in endless-survival mode.
+The first polished daylight Downtown district repeats along a baked 1,800 m curved
+route. Shooter-only bend warnings, balance/falling, ammunition/reloading, and
+police pressure follow the GDD in endless-survival mode. Four additional districts
+are planned; the HUD currently reports the one implemented district.
 Keyboard/mouse testing and the original custom serial controllers are selectable
 per player. See [integration controls and testing](Assets/Integration/README.md).
 
