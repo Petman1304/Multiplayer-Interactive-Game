@@ -155,3 +155,14 @@ transforms from the seven-tile pool (expected total 1,373). The pool count and
 updated visual result still need Editor verification: Unity crashed during script
 reload in native `ScriptCommands::Rebuild` / `MenuController::GetChecked` before
 post-reload previews could run. No second Editor or Play session was launched.
+
+## Orange building surface correction
+
+The orange `Amaryllis_City_Pok_mon_Center1` / `Mesh12` source contains inward-facing
+exterior polygons. Four-sided source previews with culling on/off confirmed that
+the missing-looking walls and roof are present but culled. The nine integration
+placements now share ten integration-only material copies with `_Cull = 0`.
+Original FBX meshes/materials remain unchanged. The authoring recipe preserves this
+correction when regenerating modules. A driver-view still confirms closed walls;
+all nine placements pass material checks. The updated pool check passes with seven
+tiles, 1,373 transforms over 18 km, and zero scenery colliders. No Play/build was run.

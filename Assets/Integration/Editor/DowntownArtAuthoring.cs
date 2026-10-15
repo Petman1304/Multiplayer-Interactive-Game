@@ -19,6 +19,29 @@ public static class DowntownArtAuthoring
         var go = GameObject.CreatePrimitive(PrimitiveType.Cube); go.name = name; UnityEngine.Object.DestroyImmediate(go.GetComponent<Collider>());
         go.transform.SetParent(parent, false); go.transform.localPosition = position; go.transform.localScale = size; go.GetComponent<Renderer>().sharedMaterial = material; return go;
     }
+    static Material[] BuildingMaterials(MeshRenderer renderer, bool twoSided)
+    {
+        var materials = renderer.sharedMaterials;
+        if (!twoSided) return materials;
+        for (int i = 0; i < materials.Length; i++)
+        {
+            var original = materials[i];
+            if (!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(original, out string guid, out long localId))
+                throw new InvalidOperationException("Building material has no asset identity.");
+            string path = Root + "/Building_" + guid + "_" + localId + ".mat";
+            var copy = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (copy == null)
+            {
+                copy = new Material(original); copy.name = original.name + " (two-sided building)";
+                AssetDatabase.CreateAsset(copy, path);
+            }
+            // This source model contains inward-facing exterior polygons. Preserve the source
+            // asset and make its existing surfaces visible from both sides in the integration.
+            copy.SetFloat("_Cull", 0); copy.doubleSidedGI = true; EditorUtility.SetDirty(copy);
+            materials[i] = copy;
+        }
+        return materials;
+    }
     public static DowntownEnvironmentDefinition Create()
     {
         if (EditorApplication.isPlaying) throw new InvalidOperationException("Stop Play before authoring.");
@@ -58,7 +81,7 @@ public static class DowntownArtAuthoring
                         var child = new GameObject(renderer.name, typeof(MeshFilter), typeof(MeshRenderer)); child.transform.SetParent(near, false);
                         child.transform.localPosition = (renderer.transform.position - new Vector3(total.center.x, total.min.y, total.center.z)) * scale;
                         child.transform.localRotation = renderer.transform.rotation; child.transform.localScale = renderer.transform.lossyScale * scale;
-                        child.GetComponent<MeshFilter>().sharedMesh = mesh; child.GetComponent<MeshRenderer>().sharedMaterials = renderer.sharedMaterials;
+                        child.GetComponent<MeshFilter>().sharedMesh = mesh; child.GetComponent<MeshRenderer>().sharedMaterials = BuildingMaterials(renderer, src.name.StartsWith("Amaryllis_City_Pok_mon_Center"));
                     }
                     // Keep complete facades throughout the visible range. Screen-relative box LODs
                     // replaced small buildings well before the fog hid them. The tile pool bounds scenery.
