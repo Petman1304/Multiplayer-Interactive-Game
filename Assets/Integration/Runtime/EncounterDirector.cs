@@ -76,6 +76,49 @@ namespace Getaway.Integration
             }
             return WaveAdmission.Skip;
         }
+        // Light traffic is independent of the authored cursor: a deferred set-piece must
+        // not hold the entire city empty. It still shares admission, budgets and host authority.
+        public static bool Ambient(RouteDefinition route, RoundState state, long circuit, int sequence, int authoredIndex,
+            RoadThreat[] admission, int existingCount, bool[] reachable, bool[] reachableNext, out RoadThreat traffic)
+        {
+            traffic = default;
+            double local = state.Distance - System.Math.Floor(state.Distance / route.Length) * route.Length;
+            if (state.Speed < 18 || local < 30 || local >= 1650
+                || existingCount >= EncounterMotion.Budget(circuit) - 2) return false;
+            int ahead = 0; bool chasing = false;
+            for (int i=0;i<existingCount;i++)
+            {
+                var t=admission[i]; chasing |= t.Kind==ThreatKind.Police;
+                if(t.Kind==ThreatKind.Traffic && t.RouteDistance>state.Distance) ahead++;
+            }
+            if(ahead >= (chasing ? 1 : 2)) return false;
+            if(route.Encounters.Length>0)
+            {
+                var authored=route.Encounters[authoredIndex];
+                double at=circuit*route.Length+authored.Distance;
+                if(at<state.Distance-100)at+=route.Length;
+                double remaining=at-state.Distance;
+                float reservation=authored.Kind==EncounterKind.Police ? 200 : 130;
+                if(authored.Kind!=EncounterKind.Recovery && authored.Kind!=EncounterKind.SlowTraffic
+                    && remaining>=0 && remaining<reservation) return false;
+            }
+            float speed=Mathf.Clamp(state.Speed*.65f,14,28);
+            float lead=Mathf.Max(EncounterMotion.Travel(state.Speed,6,Mathf.Min(42,22+state.Elapsed*.065f+.39f))-speed*6,
+                EncounterMotion.Travel(state.Speed,4)-speed*4)+13;
+            float lane=state.TruckX > .5f ? -5.2f : state.TruckX < -.5f ? 5.2f :
+                Lane(state.RouteSeed,circuit,sequence+1009)<0 ? -5.2f : 5.2f;
+            // Quiet zones still prohibit set-pieces. Light cruise traffic must leave the
+            // truck's current corridor clear rather than introduce a forced lane change.
+            if(route.NearBendBoundary(state.Distance) && Mathf.Abs(state.TruckX-lane)<4.9f)return false;
+            traffic=new RoadThreat{Active=true,Kind=ThreatKind.Traffic,Health=2,Speed=speed,
+                RouteDistance=state.Distance+lead,LaneOffset=lane,StartLane=lane,TargetLane=lane,Phase=ThreatPhase.Cruise};
+            traffic.Z=lead;
+            for(int i=0;i<existingCount;i++)
+                if(admission[i].Kind!=ThreatKind.Repair && admission[i].Kind!=ThreatKind.Police
+                    && System.Math.Abs(admission[i].RouteDistance-traffic.RouteDistance)<55) return false;
+            admission[existingCount]=traffic;
+            return EncounterMotion.SafeWave(route,state.Distance,state.TruckX,state.Speed,admission,existingCount+1,36,reachable,reachableNext);
+        }
         public static int Count(RouteEncounter encounter, long circuit) => (encounter.Kind == EncounterKind.Staggered || (encounter.Kind == EncounterKind.SlowTraffic && circuit > 0)) ? 2 : 1;
         public static RoadThreat Activate(RouteDefinition route, int seed, long circuit, int index, int part, double distance, float speed, float cruiseSpeed = 0)
         {

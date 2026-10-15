@@ -31,7 +31,8 @@ namespace Getaway.Integration
         float policeCooldownUntil, nextAdmission;
         float steer, walk, yaw, pitch = 4, lastInput = -100, nextShot, nextPacket, spawnIn, repairIn, nextSnapshot;
         bool fire;
-        int nextThreat, nextEncounter;
+        int nextThreat, nextEncounter, ambientSequence;
+        float nextAmbient, ambientRetry;
         long encounterCircuit;
         System.Random random;
         RoundState simulation;
@@ -89,7 +90,7 @@ namespace Getaway.Integration
             int round = simulation.Round + 1;
             simulation = new RoundState { Phase = RoundPhase.Countdown, Hull = GetawayRules.MaxHull, Countdown = 3, Round = round, RouteSeed = round * 7919, Pitch = 4, Balance = 100, Ammo = GetawayRules.Magazine, Reserve = 72 };
             random = new System.Random(round * 7919);
-            policeCooldownUntil = nextAdmission = 0;
+            policeCooldownUntil = nextAdmission = 0; nextAmbient = 1; ambientRetry = 0; ambientSequence = 0;
             spawnIn = 1.5f; repairIn = 18; nextThreat = 0; nextEncounter = 0; encounterCircuit = 0;
             foreach (var m in Members) { m.fire = false; m.steer = m.walk = m.yaw = 0; m.pitch = 4; m.lastInput = -100; m.nextShot = 0; }
             for (int i = 0; i < Threats.Count; i++) Threats[i] = default;
@@ -199,7 +200,7 @@ namespace Getaway.Integration
 
             simulation.Invulnerability = Mathf.Max(0, simulation.Invulnerability - dt);
             spawnIn -= dt; repairIn -= dt;
-            if (route != null) SpawnScheduled(route);
+            if (route != null) { SpawnScheduled(route); SpawnAmbient(route); }
             else
             {
                 if (spawnIn <= 0) { Spawn(false); spawnIn = Mathf.Max(.95f, 2.4f - simulation.Elapsed * .006f); }
@@ -261,6 +262,17 @@ namespace Getaway.Integration
                     { var t=wave[part];t.Id=++nextThreat;Threats[i]=t;
                         if(t.Kind==ThreatKind.Police)AnnouncePolice(PursuitEvent.Approaching);break; }
             AdvanceEncounter(route);
+        }
+        void SpawnAmbient(RouteDefinition route)
+        {
+            if(simulation.Elapsed<nextAmbient || simulation.Elapsed<ambientRetry)return;
+            ambientRetry=simulation.Elapsed+1;
+            int active=0;for(int i=0;i<Threats.Count;i++)if(Threats[i].Active)admission[active++]=Threats[i];
+            long circuit=(long)System.Math.Floor(simulation.Distance/route.Length);
+            if(!EncounterDirector.Ambient(route,simulation,circuit,ambientSequence,nextEncounter,admission,active,
+                reachable,reachableNext,out var traffic))return;
+            for(int i=0;i<Threats.Count;i++)if(!Threats[i].Active)
+            {traffic.Id=++nextThreat;Threats[i]=traffic;ambientSequence++;nextAmbient=simulation.Elapsed+6;break;}
         }
         void AnnouncePolice(PursuitEvent message)
         { simulation.PoliceEvent = message; simulation.PoliceEventUntil = simulation.Elapsed + (message == PursuitEvent.Approaching ? 6 : 3); }
