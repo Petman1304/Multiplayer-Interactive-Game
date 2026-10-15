@@ -82,6 +82,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 64
   meshCollider: {fileID: 787013865593712154}
+  truckRigidBody: {fileID: 0}
 --- !u!114 &5815765091132510762
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -89,7 +90,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 311583443184671273}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fa415bd429d2e7c40b395514cd976ab6, type: 3}
   m_Name: 
@@ -100,6 +101,8 @@ MonoBehaviour:
   steerInputMultiplier: 100
   maxSteerVelocity: 10
   maxForwardVelocity: 100
+  steerSensitivity: 1
+  arduinoInput: {fileID: 0}
 --- !u!114 &6276900073423551026
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -113,6 +116,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::InputHandler
   truckHandler: {fileID: 5815765091132510762}
+  playerInput: {fileID: 0}
 --- !u!64 &787013865593712154
 MeshCollider:
   m_ObjectHideFlags: 0

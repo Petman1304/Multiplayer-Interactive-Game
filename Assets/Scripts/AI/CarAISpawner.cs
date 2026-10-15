@@ -7,7 +7,7 @@ public class CarAISpawner : MonoBehaviour
     [SerializeField]
     GameObject[] carAIPrefabs;
 
-    GameObject[] carAIPool = new GameObject[20];
+    GameObject[] carAIPool = new GameObject[3];
 
     Transform truckTransform;
 
