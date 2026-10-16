@@ -101,6 +101,41 @@ between **Low** and **Balanced**, defaulting to Low. Their pipeline assets and
 runtime daylight overrides are isolated from the original project presets and
 restored when the integration scene unloads.
 
+## Music and sound
+
+The integration includes an original 110 BPM synth chase loop, engine and road
+wind loops, rear police siren, gunshot/hit effects, collision thumps, traffic
+pass-bys, reload/ready sounds, pickup confirmation, countdown/start and defeat
+cues. Music plays quietly in menus, rises during a pursuit, and lowers in
+settings/results. Engine pitch and wind volume follow replicated truck speed.
+The police siren follows the rear pursuer in 3D; it ends when police retires.
+Reload cues are local to the shooter, including Solo Debug role switching.
+Both seats hear confirmed shots and pickup events. Pickup sounds are triggered
+by a host RPC even when hull and ammunition are already full.
+
+**Esc → Volume** controls all audio through the existing master slider. An
+unfocused instance fades its loops and suppresses new one-shots, avoiding two
+soundtracks during same-laptop testing. The game simulation still runs in the
+background. Use matching rebuilt clients for the added pickup RPC.
+
+Audio uses eight reusable effect voices and four loop sources, with no runtime
+waveform generation or per-shot object creation. The 14 mono 22.05 kHz WAVs total
+about 1.1 MB on disk. BGM streams as Vorbis; short effects and beds preload as
+PCM. The integration-only importer preserves these settings on reimport.
+Original procedural compositions and effects can be regenerated with
+`python3 Tools/generate_getaway_audio.py`; no external recordings or packages
+are required. They can be replaced with authored WAVs using the same filenames
+in `Assets/Resources/GetawayAudio/`.
+
+`AudioVerification.Run()` silently checks all clip imports, event transitions,
+role filtering, repeated snapshots and the fixed source count in edit mode.
+Compilation and those checks passed. Playback quality, loop balance, directional
+siren audibility and simultaneous host/client playback still need a manual
+listening test: enter Solo Debug, drive past traffic, switch to Shooter, fire,
+reload, collect a repair and reach the police encounter near 980 m. Check Volume
+at zero, loss/regain of window focus, defeat, return to lobby and a second round.
+No Play session, build or audio performance capture was started automatically.
+
 ## Verification tools and limits
 
 All tools are opt-in. No build, Play session, second Editor, or sustained profiler
