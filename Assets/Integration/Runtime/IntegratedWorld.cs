@@ -50,9 +50,7 @@ namespace Getaway.Integration
         readonly double[] renderedThreatDistances = new double[GetawayRules.ThreatSlots];
         readonly float[] renderedThreatLanes = new float[GetawayRules.ThreatSlots];
         IntegratedInput input;
-        AudioSource audioSource;
-        AudioClip shotSound, impactSound, sirenSound;
-        float heardPoliceEventUntil = -1;
+        GetawayAudio audio;
         readonly Transform[,] trafficIndicators = new Transform[GetawayRules.ThreatSlots, 2];
         public float HitFeedback => Mathf.Clamp01((hitUntil - Time.unscaledTime) * 6);
         public float DamageFeedback => Mathf.Clamp01((damageUntil - Time.unscaledTime) * 2);
@@ -88,20 +86,13 @@ namespace Getaway.Integration
                 tracerCores[i]=TraceLine("Shot core "+i,new Color(1,.97f,.79f),.011f);
                 for(int arm=0;arm<3;arm++) impactSparks[i,arm]=TraceLine("Impact spark "+i+"/"+arm,new Color(1,.78f,.32f),.018f);
             }
-            audioSource = gameObject.AddComponent<AudioSource>(); audioSource.spatialBlend = 0; audioSource.volume = .22f;
-            shotSound = Tone("Shot", 130, .075f); impactSound = Tone("Impact", 65, .14f); sirenSound = Tone("Siren", 650, 1.2f);
+            audio = gameObject.AddComponent<GetawayAudio>(); audio.Initialize(input);
         }
         LineRenderer TraceLine(string name,Color color,float width)
         {
             var line=new GameObject(name).AddComponent<LineRenderer>();line.sharedMaterial=Material(color,true);
             line.positionCount=2;line.startWidth=width;line.endWidth=width*.25f;line.numCapVertices=2;
             line.shadowCastingMode=UnityEngine.Rendering.ShadowCastingMode.Off;line.receiveShadows=false;line.enabled=false;return line;
-        }
-        AudioClip Tone(string name, float frequency, float duration)
-        {
-            int count = (int)(22050 * duration); var data = new float[count];
-            for (int i = 0; i < count; i++) data[i] = Mathf.Sin(i * (name == "Siren" ? frequency + 180 * Mathf.Sin(i * Mathf.PI * 4 / 22050) : frequency) * Mathf.PI * 2 / 22050) * Mathf.Pow(1 - i / (float)count, 3);
-            var clip = AudioClip.Create(name, count, 1, 22050, false); clip.SetData(data, 0); return clip;
         }
         Material Material(Color color, bool unlit = false)
         {
@@ -330,9 +321,6 @@ namespace Getaway.Integration
             if (truck == null) return;
             var session = IntegratedCrew.Session;
             RoundState state = session != null ? session.State.Value : new RoundState { Hull = GetawayRules.MaxHull };
-            if (state.Round != lastRound) heardPoliceEventUntil = -1;
-            if (state.PoliceEvent == PursuitEvent.Approaching && state.PoliceEventUntil > state.Elapsed && state.PoliceEventUntil != heardPoliceEventUntil)
-            { heardPoliceEventUntil = state.PoliceEventUntil; audioSource.PlayOneShot(sirenSound, .5f); }
             bool snap = state.Round != lastRound || state.Phase == RoundPhase.Lobby;
             lastRound = state.Round;
             float blend = snap ? 1 : 1 - Mathf.Exp(-18 * Time.deltaTime);
@@ -416,8 +404,9 @@ namespace Getaway.Integration
             weaponView.Pose(live && !driverView,state.Phase==RoundPhase.Playing && aim,state.ReloadTime,input!=null?input.AimYaw:0,input!=null?input.AimPitch:4,Time.deltaTime,View.transform.InverseTransformPoint(AimPoint));
             weaponView.WorldWeapon.gameObject.SetActive(!live || driverView);
             weaponView.WorldWeapon.localRotation=Quaternion.Euler(state.Pitch,0,0);
-            if (state.Hull < lastHull) { damageUntil = Time.unscaledTime + .5f; audioSource.PlayOneShot(impactSound); }
+            if (state.Hull < lastHull) damageUntil = Time.unscaledTime + .5f;
             lastHull = state.Hull;
+            audio.Tick(state, session, truck, renderedDistance);
             for (int i = 0; i < tracers.Length; i++)
             {
                 float age=Time.unscaledTime-tracerBorn[i];bool active=Time.unscaledTime<tracerExpires[i];
@@ -446,6 +435,7 @@ namespace Getaway.Integration
                 }
             }
         }
+        public void PlayPickup() { if (audio != null) audio.Pickup(); }
         public void ShowShot(Vector3 from, Vector3 to, bool hit, double anchorDistance = 0)
         {
             int i = tracerIndex++ % tracers.Length;
@@ -460,7 +450,7 @@ namespace Getaway.Integration
             tracerAnchors[i]=anchorDistance;tracerStarts[i]=from;tracerEnds[i]=to;tracerHits[i]=hit;tracerBorn[i]=Time.unscaledTime;
             tracerArrival[i]=Vector3.Distance(from,to)/ShotTrace.Speed;
             tracerExpires[i]=Time.unscaledTime+ShotTrace.Lifetime(from,to);
-            audioSource.PlayOneShot(shotSound);
+            audio.Shot(hit);
             if (hit) hitUntil = Time.unscaledTime + .16f;
         }
         Vector3 ResolveAimPoint()
@@ -509,7 +499,6 @@ namespace Getaway.Integration
             foreach (var material in insideTruckMaterials.Values) if (material != null) Destroy(material);
             foreach (var material in truckGlassMaterials.Values) if (material != null) Destroy(material);
             foreach (var template in artworkCache.Values) if (template != null) Destroy(template);
-            if (sirenSound != null) Destroy(sirenSound); if (shotSound != null) Destroy(shotSound); if (impactSound != null) Destroy(impactSound);
         }
     }
 }

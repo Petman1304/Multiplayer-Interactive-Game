@@ -231,7 +231,7 @@ namespace Getaway.Integration
                 {
                     t.Active = false;
                     if (t.Kind == ThreatKind.Repair)
-                    { simulation.Hull = Mathf.Min(GetawayRules.MaxHull, simulation.Hull + 1); simulation.Reserve = Mathf.Min(120, simulation.Reserve + 24); simulation.Score += 25; }
+                    { simulation.Hull = Mathf.Min(GetawayRules.MaxHull, simulation.Hull + 1); simulation.Reserve = Mathf.Min(120, simulation.Reserve + 24); simulation.Score += 25; PickupClientRpc(); }
                     else { Damage(); simulation.Pursuit += 12; }
                 }
                 if (t.Z < -25) { t.Active = false; if (t.Kind != ThreatKind.Repair) simulation.Score += 5; }
@@ -324,6 +324,8 @@ namespace Getaway.Integration
             }
             ShotClientRpc(origin, origin + direction * nearest, hit >= 0, simulation.Distance);
         }
+        [ClientRpc] void PickupClientRpc()
+        { if (IntegratedWorld.Instance != null) IntegratedWorld.Instance.PlayPickup(); }
         [ClientRpc] void ShotClientRpc(Vector3 from, Vector3 to, bool hit, double anchorDistance)
         { if (IntegratedWorld.Instance != null) IntegratedWorld.Instance.ShowShot(from, to, hit, anchorDistance); }
     }
