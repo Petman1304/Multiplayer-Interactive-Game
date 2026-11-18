@@ -859,7 +859,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: -7443756053782179069, guid: 2fe895e29eaf78a4aa798a0671e59a6e, type: 3}
+  m_Sprite: {fileID: 8411622770071421090, guid: 1aee373fd298153418d9938a2de8818a, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -2948,7 +2948,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: -7443756053782179069, guid: 2fe895e29eaf78a4aa798a0671e59a6e, type: 3}
+  m_Sprite: {fileID: 8411622770071421090, guid: 1aee373fd298153418d9938a2de8818a, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -3162,7 +3162,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: -7443756053782179069, guid: 2fe895e29eaf78a4aa798a0671e59a6e, type: 3}
+  m_Sprite: {fileID: 8411622770071421090, guid: 1aee373fd298153418d9938a2de8818a, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -3722,6 +3722,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Getaway.Integration.IntegratedSceneUI
   ButtonPrefab: {fileID: 4928036632515936126, guid: c8faaecc3d671cdf5a3bcd20d02f1658, type: 3}
+  CustomFont: {fileID: 0}
 --- !u!1 &1458379485
 GameObject:
   m_ObjectHideFlags: 0
@@ -5206,7 +5207,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: -7443756053782179069, guid: 2fe895e29eaf78a4aa798a0671e59a6e, type: 3}
+  m_Sprite: {fileID: 8411622770071421090, guid: 1aee373fd298153418d9938a2de8818a, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1

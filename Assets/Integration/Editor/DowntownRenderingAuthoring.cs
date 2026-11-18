@@ -35,8 +35,8 @@ public static class DowntownRenderingAuthoring
         string skyPath = DowntownArtAuthoring.Root + "/CityDaylight.mat";
         var sky = AssetDatabase.LoadAssetAtPath<Material>(skyPath);
         if (sky == null) { sky = new Material(Shader.Find("Skybox/Procedural")); AssetDatabase.CreateAsset(sky, skyPath); }
-        sky.SetColor("_SkyTint", new Color(.5f,.5f,.5f)); sky.SetColor("_GroundColor", new Color(.45f,.46f,.42f));
-        sky.SetFloat("_AtmosphereThickness", 1); sky.SetFloat("_Exposure", 1f); environment.Skybox = sky;
+        sky.SetColor("_SkyTint", new Color(.42f,.58f,.92f)); sky.SetColor("_GroundColor", DowntownSetDressing.Ground); sky.SetFloat("_SunSize", .05f);
+        sky.SetFloat("_AtmosphereThickness", .75f); sky.SetFloat("_Exposure", 1.25f); environment.Skybox = sky;
         EditorUtility.SetDirty(sky); EditorUtility.SetDirty(environment); AssetDatabase.SaveAssets();
     }
 }

@@ -54,6 +54,19 @@ namespace Getaway.Integration
         readonly Transform[,] trafficIndicators = new Transform[GetawayRules.ThreatSlots, 2];
         public float HitFeedback => Mathf.Clamp01((hitUntil - Time.unscaledTime) * 6);
         public float DamageFeedback => Mathf.Clamp01((damageUntil - Time.unscaledTime) * 2);
+
+        // --- SISTEM EFEK PUING TABRAKAN (CRASH DEBRIS & IMPACT PHYSICS) ---
+        struct DebrisPiece
+        {
+            public Transform Transform;
+            public Vector3 Velocity;
+            public Vector3 AngularVelocity;
+            public float ExpireTime;
+            public bool Active;
+        }
+        readonly DebrisPiece[] debrisPool = new DebrisPiece[24];
+        float crashPitchDip;
+
         public void Initialize(IntegratedInput controls)
         {
             Instance = this; input = controls;
@@ -86,6 +99,7 @@ namespace Getaway.Integration
                 tracerCores[i]=TraceLine("Shot core "+i,new Color(1,.97f,.79f),.011f);
                 for(int arm=0;arm<3;arm++) impactSparks[i,arm]=TraceLine("Impact spark "+i+"/"+arm,new Color(1,.78f,.32f),.018f);
             }
+            BuildDebrisPool();
             audio = gameObject.AddComponent<GetawayAudio>(); audio.Initialize(input);
         }
         LineRenderer TraceLine(string name,Color color,float width)
@@ -101,12 +115,111 @@ namespace Getaway.Integration
             if (shader == null) shader = Shader.Find("Standard");
             var result = new Material(shader) { color = color }; materials.Add(color, result); return result;
         }
-        Transform Box(string name, Transform parent, Vector3 position, Vector3 scale, Color color)
+        Transform Box(string name, Transform parent, Vector3 position, Vector3 scale, Color color, Vector3 euler = default, bool unlit = false)
         {
             var item = GameObject.CreatePrimitive(PrimitiveType.Cube); item.name = name;
-            item.transform.SetParent(parent, false); item.transform.localPosition = position; item.transform.localScale = scale;
-            Destroy(item.GetComponent<Collider>()); item.GetComponent<Renderer>().sharedMaterial = Material(color);
+            item.transform.SetParent(parent, false); item.transform.localPosition = position;
+            item.transform.localRotation = Quaternion.Euler(euler); item.transform.localScale = scale;
+            Destroy(item.GetComponent<Collider>()); item.GetComponent<Renderer>().sharedMaterial = Material(color, unlit);
             return item.transform;
+        }
+        Transform Shape(PrimitiveType type, string name, Transform parent, Vector3 position, Vector3 scale, Color color, Vector3 euler = default, bool unlit = false)
+        {
+            var item = GameObject.CreatePrimitive(type); item.name = name;
+            item.transform.SetParent(parent, false); item.transform.localPosition = position;
+            item.transform.localRotation = Quaternion.Euler(euler); item.transform.localScale = scale;
+            Destroy(item.GetComponent<Collider>()); item.GetComponent<Renderer>().sharedMaterial = Material(color, unlit);
+            return item.transform;
+        }
+
+        void BuildDebrisPool()
+        {
+            var debrisRoot = new GameObject("Crash Debris Pool").transform;
+            Color white = new Color(.97f, .97f, .95f), cone = new Color(1f, .46f, .08f), dark = new Color(.15f, .16f, .18f);
+            for (int i = 0; i < debrisPool.Length; i++)
+            {
+                var pieceGO = new GameObject("Debris_" + i);
+                pieceGO.transform.SetParent(debrisRoot, false);
+                int type = i % 4;
+                if (type == 0)
+                {
+                    // Balok papan rintangan bergaris oranye-putih
+                    Box("BoardChunk", pieceGO.transform, Vector3.zero, new Vector3(1.1f, .24f, .10f), white);
+                    Box("Stripe", pieceGO.transform, Vector3.zero, new Vector3(.25f, .26f, .12f), cone, new Vector3(0, 0, 22f));
+                }
+                else if (type == 1)
+                {
+                    // Kaki kayu A-frame terlempar
+                    Box("LegChunk", pieceGO.transform, Vector3.zero, new Vector3(.10f, 1.0f, .10f), white);
+                }
+                else if (type == 2)
+                {
+                    // Traffic cone oranye terlempar
+                    Shape(PrimitiveType.Cylinder, "ConeBase", pieceGO.transform, Vector3.zero, new Vector3(.45f, .04f, .45f), dark);
+                    Shape(PrimitiveType.Cylinder, "ConeBody", pieceGO.transform, new Vector3(0, .20f, 0), new Vector3(.32f, .22f, .32f), cone);
+                    Shape(PrimitiveType.Cylinder, "ConeBand", pieceGO.transform, new Vector3(0, .34f, 0), new Vector3(.24f, .06f, .24f), white);
+                }
+                else
+                {
+                    // Serpihan puing beton / pecahan logam
+                    Box("Shard", pieceGO.transform, Vector3.zero, new Vector3(.40f, .28f, .45f), dark, new Vector3(15, 30, 45));
+                }
+                pieceGO.SetActive(false);
+                debrisPool[i] = new DebrisPiece { Transform = pieceGO.transform, Active = false };
+            }
+        }
+
+        void SpawnCrashDebris(Vector3 origin, Vector3 forward, Vector3 right, float speed)
+        {
+            crashPitchDip = 4.8f; // Hentakan moncong truk menukik ke bawah saat benturan
+            int count = 10;
+            int spawned = 0;
+            for (int i = 0; i < debrisPool.Length && spawned < count; i++)
+            {
+                if (debrisPool[i].Active) continue;
+                var d = debrisPool[i];
+                d.Active = true;
+                d.Transform.position = origin + new Vector3(UnityEngine.Random.Range(-1.2f, 1.2f), UnityEngine.Random.Range(.2f, 1.1f), UnityEngine.Random.Range(-.6f, .6f));
+                d.Transform.rotation = UnityEngine.Random.rotation;
+
+                // Terlempar ke depan searah laju truk, melambung ke atas, dan mencelat ke samping
+                float forwardImpulse = speed * 0.38f + UnityEngine.Random.Range(3.5f, 8.5f);
+                float upImpulse = UnityEngine.Random.Range(4.5f, 9.0f);
+                float sideImpulse = UnityEngine.Random.Range(-7.0f, 7.0f);
+                d.Velocity = forward * forwardImpulse + Vector3.up * upImpulse + right * sideImpulse;
+                d.AngularVelocity = UnityEngine.Random.insideUnitSphere * 750f;
+                d.ExpireTime = Time.time + UnityEngine.Random.Range(1.4f, 2.0f);
+                d.Transform.gameObject.SetActive(true);
+                debrisPool[i] = d;
+                spawned++;
+            }
+        }
+
+        void UpdateDebris(float dt)
+        {
+            for (int i = 0; i < debrisPool.Length; i++)
+            {
+                if (!debrisPool[i].Active) continue;
+                if (Time.time >= debrisPool[i].ExpireTime)
+                {
+                    debrisPool[i].Active = false;
+                    debrisPool[i].Transform.gameObject.SetActive(false);
+                    continue;
+                }
+                debrisPool[i].Velocity += Physics.gravity * 1.8f * dt;
+                debrisPool[i].Transform.position += debrisPool[i].Velocity * dt;
+                debrisPool[i].Transform.Rotate(debrisPool[i].AngularVelocity * dt, Space.Self);
+
+                // Pantulan di atas permukaan aspal jalan (y = 0.18f)
+                if (debrisPool[i].Transform.position.y <= 0.18f)
+                {
+                    Vector3 pos = debrisPool[i].Transform.position;
+                    pos.y = 0.18f;
+                    debrisPool[i].Transform.position = pos;
+                    debrisPool[i].Velocity = new Vector3(debrisPool[i].Velocity.x * 0.65f, -debrisPool[i].Velocity.y * 0.35f, debrisPool[i].Velocity.z * 0.65f);
+                    debrisPool[i].AngularVelocity *= 0.5f;
+                }
+            }
         }
         // Copy only render geometry. Instantiating the old player prefabs would run serial readers and local physics.
         bool Artwork(GameObject source, Transform parent, Vector3 targetSize)
@@ -293,8 +406,11 @@ namespace Getaway.Integration
             }
             else if (data.Kind == ThreatKind.Barricade)
             {
-                Box("Road barrier", root, Vector3.up * 1.1f, size, new Color(.96f, .39f, .12f));
-                for (int x = -1; x <= 1; x++) Box("Reflector", root, new Vector3(x * .8f, 1.3f, -.82f), new Vector3(.35f, .7f, .04f), new Color(1, .88f, .5f));
+                BuildBarricadeThreat(root);
+            }
+            else if (data.Kind == ThreatKind.Police)
+            {
+                BuildPoliceCarThreat(root);
             }
             else
             {
@@ -309,12 +425,75 @@ namespace Getaway.Integration
                             Box("Amber signal", indicator, new Vector3(side == 0 ? -1.7f : 1.7f, 1, end * 2.05f), new Vector3(.35f,.3f,.12f), new Color(1,.55f,.02f));
                         indicator.gameObject.SetActive(false);
                     }
-                if (data.Kind == ThreatKind.Police)
-                {
-                    Box("Red beacon", root, new Vector3(-.5f, 2.2f, 0), new Vector3(.65f, .25f, .5f), new Color(1, .08f, .12f));
-                    Box("Blue beacon", root, new Vector3(.5f, 2.2f, 0), new Vector3(.65f, .25f, .5f), new Color(.1f, .45f, 1));
-                }
             }
+        }
+        void BuildBarricadeThreat(Transform root)
+        {
+            Color white = new Color(.97f, .97f, .95f), cone = new Color(1f, .46f, .08f), black = new Color(.08f, .08f, .10f);
+            // A-frame legs on left and right
+            foreach (float lx in new[] { -1.05f, 1.05f })
+            {
+                Box("Leg front", root, new Vector3(lx, .68f, -.28f), new Vector3(.12f, 1.45f, .12f), white, new Vector3(16f, 0, 0));
+                Box("Leg back", root, new Vector3(lx, .68f, .28f), new Vector3(.12f, 1.45f, .12f), white, new Vector3(-16f, 0, 0));
+            }
+            // Top & middle horizontal boards with diagonal orange-and-white stripes
+            foreach (float by in new[] { 1.15f, .62f })
+            {
+                Box("Board", root, new Vector3(0, by, 0), new Vector3(2.5f, .28f, .12f), white);
+                for (int k = -3; k <= 3; k++)
+                    if ((k & 1) == 0)
+                        Box("Stripe", root, new Vector3(k * .32f, by, 0), new Vector3(.22f, .30f, .14f), cone, new Vector3(0, 0, 22f));
+            }
+            // Flashing orange warning beacons on top of the A-frame
+            foreach (float bx in new[] { -1.05f, 1.05f })
+                Shape(PrimitiveType.Sphere, "Beacon", root, new Vector3(bx, 1.42f, 0), Vector3.one * .26f, new Color(1f, .65f, .05f), default, true);
+            // Flanking traffic cones on both sides of the barricade
+            foreach (Vector3 cp in new[] { new Vector3(-1.45f, 0, -.35f), new Vector3(1.45f, 0, -.35f), new Vector3(0, 0, -.65f) })
+            {
+                Shape(PrimitiveType.Cylinder, "Cone base", root, cp + new Vector3(0, .04f, 0), new Vector3(.62f, .04f, .62f), black);
+                Shape(PrimitiveType.Cylinder, "Cone body", root, cp + new Vector3(0, .34f, 0), new Vector3(.42f, .32f, .42f), cone);
+                Shape(PrimitiveType.Cylinder, "Cone band", root, cp + new Vector3(0, .52f, 0), new Vector3(.34f, .08f, .34f), white);
+                Shape(PrimitiveType.Cylinder, "Cone tip", root, cp + new Vector3(0, .74f, 0), new Vector3(.22f, .16f, .22f), cone);
+            }
+        }
+        void BuildPoliceCarThreat(Transform root)
+        {
+            Color policeBlue = new Color(.15f, .46f, .82f), white = new Color(.97f, .97f, .95f),
+                glassDark = new Color(.18f, .28f, .42f), steel = new Color(.30f, .32f, .36f),
+                sirenRed = new Color(1f, .12f, .15f), sirenBlue = new Color(.12f, .50f, 1f),
+                glowRed = new Color(1f, .35f, .38f), glowBlue = new Color(.35f, .70f, 1f),
+                warning = new Color(1f, .82f, .10f), gold = new Color(1f, .78f, .22f), black = new Color(.08f, .08f, .10f);
+            // Classic blue & white sedan body
+            Box("Lower chassis", root, new Vector3(0, .46f, 0), new Vector3(2.22f, .26f, 4.65f), policeBlue);
+            Box("Main body", root, new Vector3(0, .76f, 0), new Vector3(2.16f, .42f, 4.50f), white);
+            Box("Front hood blue", root, new Vector3(0, .78f, 1.45f), new Vector3(2.18f, .40f, 1.55f), policeBlue);
+            Box("Rear trunk blue", root, new Vector3(0, .78f, -1.45f), new Vector3(2.18f, .40f, 1.55f), policeBlue);
+            // Front & rear bumpers
+            Box("Front bumper", root, new Vector3(0, .35f, 2.34f), new Vector3(2.26f, .20f, .20f), steel);
+            Box("Rear bumper", root, new Vector3(0, .35f, -2.34f), new Vector3(2.26f, .20f, .20f), steel);
+            // Headlights & taillights
+            foreach (float lx in new[] { -.74f, .74f })
+            {
+                Box("Taillight", root, new Vector3(lx, .76f, -2.26f), new Vector3(.46f, .20f, .06f), sirenRed, default, true);
+                Box("Turn signal", root, new Vector3(lx * .72f, .76f, -2.27f), new Vector3(.24f, .18f, .06f), warning, default, true);
+                Box("Headlight", root, new Vector3(lx, .76f, 2.26f), new Vector3(.42f, .20f, .06f), white, default, true);
+            }
+            // White upper cabin with dark windows
+            Box("Cabin", root, new Vector3(0, 1.30f, -.15f), new Vector3(1.90f, .68f, 2.35f), white);
+            Box("Side glass", root, new Vector3(0, 1.28f, -.15f), new Vector3(1.94f, .46f, 2.10f), glassDark);
+            Box("Front/rear glass", root, new Vector3(0, 1.28f, -.15f), new Vector3(1.70f, .46f, 2.40f), glassDark);
+            // Glowing red & blue roof lightbar + bright halo spheres
+            Box("Lightbar mount", root, new Vector3(0, 1.68f, -.15f), new Vector3(1.28f, .10f, .34f), steel);
+            Box("Blue siren", root, new Vector3(-.36f, 1.78f, -.15f), new Vector3(.56f, .20f, .38f), sirenBlue, default, true);
+            Box("Red siren", root, new Vector3(.36f, 1.78f, -.15f), new Vector3(.56f, .20f, .38f), sirenRed, default, true);
+            Shape(PrimitiveType.Sphere, "Blue halo", root, new Vector3(-.44f, 1.82f, -.15f), new Vector3(1.05f, .56f, 1.05f), glowBlue, default, true);
+            Shape(PrimitiveType.Sphere, "Red halo", root, new Vector3(.44f, 1.82f, -.15f), new Vector3(1.05f, .56f, 1.05f), glowRed, default, true);
+            // Gold police shield on both left & right doors
+            foreach (float sx in new[] { -1.09f, 1.09f })
+                Box("Door shield", root, new Vector3(sx, .76f, .15f), new Vector3(.04f, .28f, .26f), gold);
+            // 4 wheels
+            foreach (float wx in new[] { -1.05f, 1.05f }) foreach (float wz in new[] { -1.42f, 1.42f })
+                Shape(PrimitiveType.Cylinder, "Wheel", root, new Vector3(wx, .38f, wz), new Vector3(.78f, .16f, .78f), black, new Vector3(0, 0, 90));
         }
         void LateUpdate()
         {
@@ -330,6 +509,11 @@ namespace Getaway.Integration
             renderedTruckX = snap ? state.TruckX : Mathf.Lerp(renderedTruckX, state.TruckX, blend);
             truck.position = route != null ? routePose.Right * renderedTruckX : new Vector3(renderedTruckX, 0, 0);
             truck.rotation = route != null ? routePose.Rotation : Quaternion.identity;
+            if (crashPitchDip > 0.01f)
+            {
+                truck.rotation = truck.rotation * Quaternion.Euler(crashPitchDip, 0, 0);
+                crashPitchDip = Mathf.MoveTowards(crashPitchDip, 0, 16f * Time.deltaTime);
+            }
             Vector3 shooterPosition = GetawayRules.RearShooterSpawn + Vector3.right * state.RoofX;
             roof.localPosition = Vector3.Lerp(roof.localPosition, shooterPosition, blend);
             if (steeringWheel != null)
@@ -379,11 +563,38 @@ namespace Getaway.Integration
             bool live = session != null && (state.Phase == RoundPhase.Playing || state.Phase == RoundPhase.Countdown || state.Phase == RoundPhase.Wrecked);
             if (live)
             {
-                // Camera snaps to the selected player's eyes, never interpolates through the vehicle.
-                View.transform.position = driverView ? truck.TransformPoint(DriverEye) : roof.position + truck.rotation * ShooterEye;
+                // Posisi dasar mata pemain:
+                Vector3 eyePos = driverView ? truck.TransformPoint(DriverEye) : roof.position + truck.rotation * ShooterEye;
                 float yaw = driverView ? input.DriverLookYaw : input.AimYaw;
                 float pitch = driverView ? input.DriverLookPitch : input.AimPitch;
-                View.transform.rotation = truck.rotation * Quaternion.Euler(pitch, yaw, 0);
+                float roll = 0f;
+
+                // --- TAHAP 3: EFEK GUNCANGAN TABRAKAN (CRASH JOLT & HEAVY THUD) ---
+                float crashShake = DamageFeedback;
+                if (crashShake > 0)
+                {
+                    eyePos += new Vector3(
+                        (Mathf.Sin(Time.time * 50f)) * 0.35f,
+                        (Mathf.Cos(Time.time * 45f)) * 0.35f,
+                        -0.25f * crashShake // Sentakan kepala terdorong mundur sesaat akibat hentakan benturan
+                    ) * crashShake;
+                    roll += Mathf.Sin(Time.time * 35f) * 8f * crashShake;
+                }
+
+                // --- TAHAP 3: EFEK KAMERA MIRING SAAT OLENG (BALANCE TILT) ---
+                if (!driverView && state.Balance < 40f)
+                {
+                    float unbalanceFactor = (40f - state.Balance) / 40f; // 0 (mulai oleng) s/d 1 (kritis jatuh)
+
+                    // Kemiringan kamera (roll) ke kiri/kanan sesuai posisi badan di atap
+                    roll += (state.RoofX >= 0 ? -1f : 1f) * Mathf.Lerp(5f, 18f, unbalanceFactor);
+
+                    // Guncangan gemetar (shiver) karena hampir kehilangan pijakan
+                    eyePos += UnityEngine.Random.insideUnitSphere * (0.05f * unbalanceFactor);
+                }
+
+                View.transform.position = eyePos;
+                View.transform.rotation = truck.rotation * Quaternion.Euler(pitch, yaw, roll);
             }
             else
             {
@@ -404,8 +615,15 @@ namespace Getaway.Integration
             weaponView.Pose(live && !driverView,state.Phase==RoundPhase.Playing && aim,state.ReloadTime,input!=null?input.AimYaw:0,input!=null?input.AimPitch:4,Time.deltaTime,View.transform.InverseTransformPoint(AimPoint));
             weaponView.WorldWeapon.gameObject.SetActive(!live || driverView);
             weaponView.WorldWeapon.localRotation=Quaternion.Euler(state.Pitch,0,0);
-            if (state.Hull < lastHull) damageUntil = Time.unscaledTime + .5f;
+            if (state.Hull < lastHull)
+            {
+                damageUntil = Time.unscaledTime + .5f;
+                // Titik benturan tepat di depan bumper depan truk:
+                Vector3 impactPoint = truck.position + truck.forward * 4.2f + Vector3.up * 0.8f;
+                SpawnCrashDebris(impactPoint, truck.forward, truck.right, state.Speed);
+            }
             lastHull = state.Hull;
+            UpdateDebris(Time.deltaTime);
             audio.Tick(state, session, truck, renderedDistance);
             for (int i = 0; i < tracers.Length; i++)
             {

@@ -6,9 +6,13 @@ namespace Getaway.Integration
     [RequireComponent(typeof(CanvasRenderer))]
     public sealed class GetawayButtonGraphic : UnityEngine.UI.MaskableGraphic
     {
-        public Color Top = new Color(.63f, .035f, .76f);
-        public Color Bottom = new Color(.13f, .16f, .69f);
-        public Color Outline = new Color(.46f, .97f, 1);
+        // Warna Flat Biru Tua (#1E293B) untuk permukaan tombol:
+        public Color Top = new Color32(30, 41, 59, 255);
+        public Color Bottom = new Color32(30, 41, 59, 255);
+        // Warna Aksen Kuning/Oranye (#F59E0B) untuk bingkai/outline:
+        public Color Outline = new Color32(245, 158, 11, 255);
+
+
         protected override void OnPopulateMesh(UnityEngine.UI.VertexHelper mesh)
         {
             mesh.Clear();

@@ -23,11 +23,13 @@ namespace Getaway.Integration
         }
         readonly Tile[] tiles = new Tile[PoolSize];
         RouteDefinition route;
+        DowntownSetDressing dressing;
         public int ActiveTiles => route != null ? PoolSize : 0;
         public void Initialize(RouteDefinition definition, DowntownEnvironmentDefinition art)
         {
             if (route != null) return;
             route = definition;
+            dressing = new DowntownSetDressing(art.RoadMaterials[1]);
             for (int i = 0; i < tiles.Length; i++)
             {
                 var tile = tiles[i] = new Tile();
@@ -36,7 +38,8 @@ namespace Getaway.Integration
                 road.GetComponent<MeshRenderer>().sharedMaterials = art.RoadMaterials;
                 for (int variant = 0; variant < 6; variant++)
                 {
-                    var root = Instantiate(art.Modules[variant], transform, false); root.SetActive(false);
+                    // Blind Getaway dressing is added while the module is still active, then pooled inactive.
+                    var root = Instantiate(art.Modules[variant], transform, false); dressing.Apply(root.transform, (CitySectionKind)variant); root.SetActive(false);
                     var module = new Module { Root = root, Anchors = new Transform[root.transform.childCount], Positions = new Vector3[root.transform.childCount], Rotations = new Quaternion[root.transform.childCount], Details = new bool[root.transform.childCount] };
                     for (int child = 0; child < module.Anchors.Length; child++)
                     { var t = root.transform.GetChild(child); module.Anchors[child] = t; module.Positions[child] = t.localPosition; module.Rotations[child] = t.localRotation; module.Details[child] = t.name.StartsWith("Detail"); }
@@ -74,6 +77,7 @@ namespace Getaway.Integration
         {
             foreach (var tile in tiles) if (tile != null && tile.Surface != null)
             { if (Application.isPlaying) Destroy(tile.Surface.Mesh); else DestroyImmediate(tile.Surface.Mesh); }
+            dressing?.Dispose();
         }
     }
 }

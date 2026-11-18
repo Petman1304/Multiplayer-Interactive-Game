@@ -51,9 +51,9 @@ public static class DowntownArtAuthoring
             if (t.name.StartsWith("Amaryllis_") || t.name.StartsWith("Lycoris_")) buildingSources.Add(t);
         if (buildingSources.Count == 0) throw new Exception("Petrus building groups not found.");
         var materials = new[] {
-            MakeMaterial("CityGround", new Color(.24f,.27f,.23f)), MakeMaterial("CityAsphalt", new Color(.16f,.18f,.19f)),
-            MakeMaterial("CitySidewalk", new Color(.49f,.48f,.44f)), MakeMaterial("CityCurb", new Color(.68f,.67f,.61f)),
-            MakeMaterial("CityMarkings", new Color(.88f,.87f,.76f)) };
+            MakeMaterial("CityGround", DowntownSetDressing.Ground), MakeMaterial("CityAsphalt", new Color(.21f,.23f,.27f)),
+            MakeMaterial("CitySidewalk", new Color(.74f,.71f,.64f)), MakeMaterial("CityCurb", new Color(.88f,.86f,.80f)),
+            MakeMaterial("CityMarkings", new Color(.98f,.97f,.90f)) };
         var orange = MakeMaterial("CityConstruction", new Color(.85f,.39f,.13f)); var dark = MakeMaterial("CityStreetFurniture", new Color(.12f,.16f,.18f));
         var sign = MakeMaterial("CitySign", new Color(.08f,.32f,.29f));
         string definitionPath = Root + "/DowntownEnvironment.asset";

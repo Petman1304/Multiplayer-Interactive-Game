@@ -33,13 +33,14 @@ namespace Getaway.Integration
             oldLights = FindObjectsByType<Light>(); oldEnabled = new bool[oldLights.Length];
             for (int i = 0; i < oldLights.Length; i++) { oldEnabled[i] = oldLights[i].enabled; if (oldLights[i].gameObject.scene == gameObject.scene && oldLights[i].type == LightType.Directional) oldLights[i].enabled = false; }
             var lightObject = new GameObject("Downtown daylight"); lightObject.transform.SetParent(transform, false);
-            lightObject.transform.rotation = Quaternion.Euler(48, -32, 0); sun = lightObject.AddComponent<Light>();
-            sun.type = LightType.Directional; sun.color = new Color(1, .95f, .85f); sun.intensity = 1.15f;
+            // Bright, cartoon midday for the Blind Getaway chase: warm sun, saturated sky, light haze.
+            lightObject.transform.rotation = Quaternion.Euler(52, -35, 0); sun = lightObject.AddComponent<Light>();
+            sun.type = LightType.Directional; sun.color = new Color(1, .96f, .88f); sun.intensity = 1.25f;
             RenderSettings.sun = sun; RenderSettings.skybox = art.Skybox;
-            RenderSettings.ambientMode = AmbientMode.Trilight; RenderSettings.ambientSkyColor = new Color(.60f, .69f, .78f);
-            RenderSettings.ambientEquatorColor = new Color(.43f, .46f, .47f); RenderSettings.ambientGroundColor = new Color(.25f, .25f, .23f);
-            RenderSettings.fog = true; RenderSettings.fogMode = FogMode.Linear; RenderSettings.fogColor = new Color(.68f, .76f, .80f);
-            RenderSettings.fogStartDistance = 160; RenderSettings.fogEndDistance = 300;
+            RenderSettings.ambientMode = AmbientMode.Trilight; RenderSettings.ambientSkyColor = new Color(.70f, .80f, .95f);
+            RenderSettings.ambientEquatorColor = new Color(.60f, .66f, .70f); RenderSettings.ambientGroundColor = new Color(.40f, .42f, .35f);
+            RenderSettings.fog = true; RenderSettings.fogMode = FogMode.Linear; RenderSettings.fogColor = new Color(.74f, .85f, .96f);
+            RenderSettings.fogStartDistance = 170; RenderSettings.fogEndDistance = 320;
             view.farClipPlane = 380; view.allowHDR = false; view.clearFlags = CameraClearFlags.Skybox;
             view.GetUniversalAdditionalCameraData().renderPostProcessing = false;
             selected = Mathf.Clamp(PlayerPrefs.GetInt("Getaway.CityQuality", 0), 0, 1); Apply();

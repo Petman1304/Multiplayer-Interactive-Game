@@ -182,3 +182,21 @@ load isolated compiled code into the existing Editor and create only a temporary
 route copy; they do not start gameplay or a second Editor. New presentation
 (indicators, siren, rear aiming from the bed) and real two-client agreement still
 require the manual checks listed above. Performance acceptance remains unmeasured.
+
+
+## Blind Getaway theme dressing
+
+`DowntownSetDressing` (runtime) adds the game-concept dressing to every pooled module during
+`DowntownEnvironment.Initialize`, so no prefab regeneration is needed. Look: bright cartoon midday.
+
+- All modules: a skyline of striped pastel towers (front row 58-66 m, back row 84-104 m),
+  rooftop adverts with Indonesian gag copy, clouds, and ground slabs past the 55 m road ground.
+- BoulevardA: trees, bus stop, bakso cart, grocery crates. BoulevardB: "Pasar Segar" food-market stalls.
+- Left/RightBend: chevrons on the outer sidewalk and a "TIKUNGAN TAJAM" warning, readable callouts for the crew.
+- Construction: police barricades, cones, a parked police car and a police post.
+- Landmark: "BANK KOTA" (the failed heist) replaces the right middle frontage, with spilled loot and police cars.
+
+Each prop is combined into one mesh per colour; no colliders, lights or scripts. Signs use
+TextMeshPro, are named `Detail label`, and hide past 120 m like other details. Lighting,
+fog, skybox and road colours were brightened to match (`DowntownRendering`, `CityDaylight.mat`,
+road `.mat` files and both authoring recipes). Not yet verified in Play mode or with a performance capture.
