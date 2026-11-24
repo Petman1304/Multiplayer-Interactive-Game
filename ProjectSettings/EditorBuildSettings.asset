@@ -5,6 +5,12 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
+  - enabled: 1
+    path: Assets/Scenes/IntegratedGetaway.unity
+    guid: 41d6ca09b5854dee8f923d5aec567200
+  - enabled: 1
+    path: Assets/Scenes/CoopGetaway.unity
+    guid: 1ce88daff60c4c6facee6b2d542ccf9a
   - enabled: 0
     path: Assets/Scenes/SampleScene.unity
     guid: 99c9720ab356a0642a771bea13969a05

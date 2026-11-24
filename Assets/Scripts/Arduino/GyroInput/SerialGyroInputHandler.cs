@@ -8,7 +8,8 @@ public class SerialGyroInputHandler : MonoBehaviour
     string portName;
 
     public Vector3 rotAngle;
-    public int resetAngle;
+    public int aimDown;
+    public int shootGun;
 
     private SerialPort serial;
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -44,17 +45,19 @@ public class SerialGyroInputHandler : MonoBehaviour
 
             string[] values = data.Split(',');
 
-            if (values.Length != 4)
+            if (values.Length != 5)
                 return;
 
             if (
                 float.TryParse(values[0], NumberStyles.Float, CultureInfo.InvariantCulture, out float rotX) &&
                 float.TryParse(values[1], NumberStyles.Float, CultureInfo.InvariantCulture, out float rotY) &&
                 float.TryParse(values[2], NumberStyles.Float, CultureInfo.InvariantCulture, out float rotZ) &&
-                int.TryParse(values[3], NumberStyles.Integer, CultureInfo.InvariantCulture, out int reset)
+                int.TryParse(values[3], NumberStyles.Integer, CultureInfo.InvariantCulture, out int aimBtn) &&
+                int.TryParse(values[4], NumberStyles.Integer, CultureInfo.InvariantCulture, out int shootBtn)
         ) {
                 rotAngle = new Vector3(rotX, rotY, rotZ);
-                resetAngle = reset;
+                aimDown = aimBtn;
+                shootGun = shootBtn;
             } 
         }
         catch (System.TimeoutException)
